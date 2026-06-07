@@ -477,7 +477,7 @@ button {
 
 <script>
 // ================================================================
-//  ⚠️  部署後請把下面這行換成你的 GAS Web App 網址
+//  GAS Web App 網址
 // ================================================================
 const GAS_URL = 'https://script.google.com/macros/s/AKfycbzw9qjSYgQeJdlSMHryRkMVSixXYWucFMWWPF4N4acwOZTxTvmAcN1EZDuriSOLMTs5aA/exec';
 // ================================================================
@@ -501,15 +501,11 @@ let gpsReady = false;
   setTimeout(tick, 1000);
 })();
 
-// ── GAS API（用 fetch 取代 google.script.run）──
-// Content-Type 故意用 text/plain，避免觸發 CORS preflight
+// ── GAS API（GET + query string，唯一能繞過 GAS CORS 限制的方法）──
 async function gasCall(action, params) {
-  const body = JSON.stringify({ action, ...params });
-  const res = await fetch(GAS_URL, {
-    method: 'POST',
-    headers: { 'Content-Type': 'text/plain' },
-    body,
-  });
+  const qs = new URLSearchParams({ action });
+  Object.entries(params || {}).forEach(([k, v]) => qs.set(k, String(v)));
+  const res = await fetch(GAS_URL + '?' + qs.toString(), { redirect: 'follow' });
   if (!res.ok) throw new Error('HTTP ' + res.status);
   const json = await res.json();
   if (json.error) throw new Error(json.error);
