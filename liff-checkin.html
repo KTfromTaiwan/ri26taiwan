@@ -235,7 +235,7 @@ button { font-family: 'Noto Sans TC', -apple-system, sans-serif; cursor: pointer
     <div class="gps-row"><span class="gps-label">經度 Lng</span><span class="gps-value loading" id="gpsLng">取得中...</span></div>
     <div class="gps-row"><span class="gps-label">精準度</span><span class="gps-value loading" id="gpsAcc">取得中...</span></div>
     <div id="accuracy-badge"></div>
-    <button class="gps-retry hidden" id="gps-retry" onclick="prefetchPosition()">🔄 重新取得定位</button>
+    <button class="gps-retry hidden" id="gps-retry" onclick="prefetchPosition()">重新定位</button>
   </div>
 
   <!-- PIN + 打卡 -->
@@ -299,6 +299,7 @@ const $ = id => document.getElementById(id);
 let staff = null;
 let lineUserId = null;   // 純紀錄用，不做驗證
 let lineAvatar = null;
+let cachedPosition = null;  // 預先抓取的 GPS 座標
 
 // ── Clock ──
 (function tick() {
@@ -433,12 +434,15 @@ $('change-staff').addEventListener('click', async () => {
 // ── GPS ──
 function prefetchPosition() {
   $('gps-retry').classList.add('hidden');
+  $('btn-in').disabled = true; $('btn-out').disabled = true;
+  cachedPosition = null;
   setGpsVal('gpsLat', '取得中...', 'loading');
   setGpsVal('gpsLng', '取得中...', 'loading');
   setGpsVal('gpsAcc', '取得中...', 'loading');
   $('accuracy-badge').innerHTML = '';
   getPosition()
     .then(pos => {
+      cachedPosition = pos;
       const { latitude, longitude, accuracy } = pos.coords;
       setGpsVal('gpsLat', latitude.toFixed(6), 'ok');
       setGpsVal('gpsLng', longitude.toFixed(6), 'ok');
@@ -449,8 +453,10 @@ function prefetchPosition() {
         : '<div class="accuracy-badge bad"><span class="dot"></span>精準度不足，建議移至空曠處</div>';
       $('btn-in').disabled = false;
       $('btn-out').disabled = false;
+      $('gps-retry').classList.remove('hidden');
     })
     .catch(async e => {
+      cachedPosition = null;
       setGpsError('失敗');
       $('gps-retry').classList.remove('hidden');
       showStatus(e.message, 'err');
@@ -484,24 +490,15 @@ function getPosition() {
 async function punch(type) {
   const pin = $('pin-input').value.trim();
   if (!/^\d{4}$/.test(pin)) { showStatus('請先輸入手機末四碼（4 位數字）', 'err'); $('pin-input').focus(); return; }
+  if (!cachedPosition) { showStatus('❌ 尚未取得定位，請按「重新定位」後再試', 'err'); return; }
   const spinId = type === 'in' ? 'spin-in' : 'spin-out';
   $('btn-in').disabled = true; $('btn-out').disabled = true;
   $(spinId).classList.remove('hidden');
-  showStatus('📡 取得最新定位中...', 'info');
-  setGpsVal('gpsLat','取得中...','loading'); setGpsVal('gpsLng','取得中...','loading'); setGpsVal('gpsAcc','取得中...','loading');
-  let pos;
-  try { pos = await getPosition(); } catch(e) {
-    $(spinId).classList.add('hidden'); $('btn-in').disabled=false; $('btn-out').disabled=false;
-    showStatus('❌ '+e.message,'err'); setGpsError('失敗'); await checkLocationPermission(); return;
-  }
-  const { latitude:lat, longitude:lng, accuracy } = pos.coords;
-  setGpsVal('gpsLat', lat.toFixed(6), 'ok');
-  setGpsVal('gpsLng', lng.toFixed(6), 'ok');
-  setGpsVal('gpsAcc', Math.round(accuracy)+' 公尺', accuracy<=MAX_ACCURACY?'ok':'loading');
   showStatus('🛰️ 比對站點中...', 'info');
+  const { latitude:lat, longitude:lng, accuracy } = cachedPosition.coords;
   try {
     const params = { staffName: staff.name, pin, type, lat, lng, accuracy };
-    if (lineUserId) params.lineUserId = lineUserId;  // 附帶 LINE ID 做紀錄
+    if (lineUserId) params.lineUserId = lineUserId;
     const data = await gasCall('submitPunch', params);
     $(spinId).classList.add('hidden');
     handlePunchResult(data);
