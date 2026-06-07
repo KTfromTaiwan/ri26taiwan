@@ -4,6 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, maximum-scale=1">
 <title>Chekcin 打卡</title>
+<script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
 
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700;900&family=DM+Mono:wght@400;500&display=swap');
@@ -21,10 +22,10 @@
   --text:        #e8eaf2;
   --muted:       #6b7280;
   --radius:      16px;
+  --line-green:  #06C755;
 }
 
 * { box-sizing: border-box; margin: 0; padding: 0; }
-
 html, body {
   min-height: 100%;
   background: var(--bg);
@@ -34,335 +35,135 @@ html, body {
   overflow-x: hidden;
   -webkit-tap-highlight-color: transparent;
 }
-
 body::before {
   content: '';
-  position: fixed;
-  top: 0; right: 0; bottom: 0; left: 0;
+  position: fixed; top: 0; right: 0; bottom: 0; left: 0;
   background-image:
     linear-gradient(rgba(74,222,128,.03) 1px, transparent 1px),
     linear-gradient(90deg, rgba(74,222,128,.03) 1px, transparent 1px);
   background-size: 40px 40px;
-  pointer-events: none;
-  z-index: 0;
+  pointer-events: none; z-index: 0;
 }
-
 .wrapper {
-  position: relative;
-  z-index: 1;
+  position: relative; z-index: 1;
   min-height: 100vh;
-  display: -webkit-flex;
-  display: flex;
-  -webkit-flex-direction: column;
-  flex-direction: column;
-  -webkit-align-items: center;
-  align-items: center;
+  display: flex; flex-direction: column; align-items: center;
   padding: 32px 20px 60px;
 }
-
 .wrapper > * { margin-bottom: 16px; }
 .wrapper > *:last-child { margin-bottom: 0; }
 
 .header { width: 100%; text-align: center; }
-.header .brand {
-  font-size: 11px;
-  font-family: 'DM Mono', monospace;
-  letter-spacing: .2em;
-  color: var(--muted);
-  text-transform: uppercase;
-  margin-bottom: 6px;
-}
+.header .brand { font-size: 11px; font-family: 'DM Mono', monospace; letter-spacing: .2em; color: var(--muted); text-transform: uppercase; margin-bottom: 6px; }
 .header h1 { font-size: 26px; font-weight: 900; letter-spacing: -.5px; }
 .header h1 span { color: var(--accent); }
 
-.clock-card {
-  width: 100%;
-  background: var(--card);
-  border: 1px solid var(--border);
-  border-radius: var(--radius);
-  padding: 20px;
-  text-align: center;
-}
-.clock-time {
-  font-family: 'DM Mono', monospace;
-  font-size: 42px;
-  font-weight: 500;
-  letter-spacing: 2px;
-  color: var(--accent);
-  line-height: 1;
-}
-.clock-date {
-  font-size: 13px;
-  color: var(--muted);
-  margin-top: 6px;
-  font-family: 'DM Mono', monospace;
-}
+.clock-card { width: 100%; background: var(--card); border: 1px solid var(--border); border-radius: var(--radius); padding: 20px; text-align: center; }
+.clock-time { font-family: 'DM Mono', monospace; font-size: 42px; font-weight: 500; letter-spacing: 2px; color: var(--accent); line-height: 1; }
+.clock-date { font-size: 13px; color: var(--muted); margin-top: 6px; font-family: 'DM Mono', monospace; }
 
-.card {
-  width: 100%;
-  background: var(--card);
-  border: 1px solid var(--border);
-  border-radius: var(--radius);
-  padding: 20px;
-}
-.card-title {
-  font-size: 12px;
-  font-family: 'DM Mono', monospace;
-  letter-spacing: .15em;
-  color: var(--muted);
-  text-transform: uppercase;
-  margin-bottom: 14px;
-}
-label {
-  display: block;
-  font-size: 12px;
-  font-family: 'DM Mono', monospace;
-  letter-spacing: .15em;
-  color: var(--muted);
-  text-transform: uppercase;
-  margin-bottom: 10px;
-}
+.card { width: 100%; background: var(--card); border: 1px solid var(--border); border-radius: var(--radius); padding: 20px; }
+.card-title { font-size: 12px; font-family: 'DM Mono', monospace; letter-spacing: .15em; color: var(--muted); text-transform: uppercase; margin-bottom: 14px; }
 
+/* Splash */
+.splash { width: 100%; text-align: center; padding: 40px 0; }
+.splash-text { font-size: 13px; color: var(--muted); font-family: 'DM Mono', monospace; animation: blink 1s infinite; }
+
+/* LINE login */
+.login-card { width: 100%; background: var(--card); border: 1px solid var(--border); border-radius: var(--radius); padding: 32px 20px; text-align: center; }
+.login-card p { font-size: 14px; color: var(--muted); margin-bottom: 20px; line-height: 1.6; }
+.btn-line { display: flex; align-items: center; justify-content: center; gap: 10px; width: 100%; padding: 15px 20px; font-size: 16px; font-weight: 700; font-family: 'Noto Sans TC', sans-serif; border: none; border-radius: var(--radius); background: var(--line-green); color: #fff; cursor: pointer; transition: opacity .15s; letter-spacing: .5px; }
+.btn-line:active { opacity: .85; }
+
+/* LINE profile card */
+.who { display: flex; align-items: center; gap: 14px; }
+.user-avatar { width: 52px; height: 52px; border-radius: 50%; background: var(--accent-dim); border: 2px solid var(--accent); display: flex; align-items: center; justify-content: center; flex-shrink: 0; font-size: 24px; overflow: hidden; }
+.user-avatar img { width: 100%; height: 100%; object-fit: cover; border-radius: 50%; }
+.user-info { flex: 1; min-width: 0; }
+.user-name { font-size: 17px; font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.user-uid { font-size: 12px; color: var(--muted); margin-top: 3px; font-family: 'DM Mono', monospace; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.login-badge { flex-shrink: 0; font-size: 12px; font-family: 'DM Mono', monospace; color: var(--accent); border: 1px solid rgba(74,222,128,.4); padding: 5px 12px; border-radius: 20px; background: var(--accent-dim); white-space: nowrap; }
+
+/* 姓名輸入 */
+label { display: block; font-size: 12px; font-family: 'DM Mono', monospace; letter-spacing: .15em; color: var(--muted); text-transform: uppercase; margin-bottom: 10px; }
 input[type="text"], input[type="tel"] {
-  width: 100%;
-  padding: 13px 14px;
-  font-size: 16px;
-  font-family: 'Noto Sans TC', sans-serif;
-  border: 1px solid var(--border);
-  border-radius: 10px;
-  background: var(--surface);
-  color: var(--text);
-  outline: none;
-  -webkit-transition: border-color .2s;
-  transition: border-color .2s;
+  width: 100%; padding: 13px 14px; font-size: 16px; font-family: 'Noto Sans TC', sans-serif;
+  border: 1px solid var(--border); border-radius: 10px; background: var(--surface); color: var(--text);
+  outline: none; transition: border-color .2s;
 }
-input[type="text"]:focus,
-input[type="tel"]:focus { border-color: var(--accent); }
-input[type="tel"] {
-  text-align: center;
-  letter-spacing: 8px;
-  font-size: 22px;
-  font-family: 'DM Mono', monospace;
-}
-.hint {
-  font-size: 12px;
-  color: var(--muted);
-  margin-top: 8px;
-  line-height: 1.5;
-}
+input[type="text"]:focus, input[type="tel"]:focus { border-color: var(--accent); }
+input[type="tel"] { text-align: center; letter-spacing: 8px; font-size: 22px; font-family: 'DM Mono', monospace; }
+.hint { font-size: 12px; color: var(--muted); margin-top: 8px; line-height: 1.5; }
+.err-msg { color: var(--err); font-size: 13px; margin-top: 10px; }
 
-.who {
-  display: -webkit-flex;
-  display: flex;
-  -webkit-align-items: center;
-  align-items: center;
-}
-.user-avatar {
-  width: 44px; height: 44px;
-  border-radius: 50%;
-  background: var(--accent-dim);
-  border: 2px solid var(--accent);
-  display: -webkit-flex;
-  display: flex;
-  -webkit-align-items: center;
-  align-items: center;
-  -webkit-justify-content: center;
-  justify-content: center;
-  -webkit-flex-shrink: 0;
-  flex-shrink: 0;
-  font-size: 20px;
-  margin-right: 14px;
-}
-.user-info { -webkit-flex: 1; flex: 1; }
-.user-name { font-size: 16px; font-weight: 700; }
-.user-sub { font-size: 12px; color: var(--muted); margin-top: 2px; font-family: 'DM Mono', monospace; }
-.change-btn {
-  font-size: 12px;
-  font-family: 'DM Mono', monospace;
-  color: var(--accent);
-  cursor: pointer;
-  border: 1px solid rgba(74,222,128,.3);
-  padding: 4px 10px;
-  border-radius: 20px;
-  background: var(--accent-dim);
-  white-space: nowrap;
-}
+/* Who (after name confirm) */
+.confirmed-who { display: flex; align-items: center; }
+.confirmed-avatar { width: 44px; height: 44px; border-radius: 50%; background: var(--accent-dim); border: 2px solid var(--accent); display: flex; align-items: center; justify-content: center; flex-shrink: 0; font-size: 20px; margin-right: 14px; overflow: hidden; }
+.confirmed-avatar img { width: 100%; height: 100%; object-fit: cover; border-radius: 50%; }
+.confirmed-info { flex: 1; }
+.confirmed-name { font-size: 16px; font-weight: 700; }
+.confirmed-sub { font-size: 12px; color: var(--muted); margin-top: 2px; font-family: 'DM Mono', monospace; }
+.change-btn { font-size: 12px; font-family: 'DM Mono', monospace; color: var(--accent); cursor: pointer; border: 1px solid rgba(74,222,128,.3); padding: 4px 10px; border-radius: 20px; background: var(--accent-dim); white-space: nowrap; }
 
-.gps-row {
-  display: -webkit-flex; display: flex;
-  -webkit-justify-content: space-between; justify-content: space-between;
-  -webkit-align-items: center; align-items: center;
-  padding: 8px 0;
-  border-bottom: 1px solid var(--border);
-}
+/* GPS */
+.gps-row { display: flex; justify-content: space-between; align-items: center; padding: 8px 0; border-bottom: 1px solid var(--border); }
 .gps-row:last-of-type { border-bottom: none; }
 .gps-label { font-size: 13px; color: var(--muted); }
 .gps-value { font-family: 'DM Mono', monospace; font-size: 13px; color: var(--text); }
-.gps-value.loading { color: var(--warn); -webkit-animation: blink 1s infinite; animation: blink 1s infinite; }
-.gps-value.ok      { color: var(--accent); }
-.gps-value.error   { color: var(--err); }
-
-.accuracy-badge {
-  display: -webkit-inline-flex; display: inline-flex;
-  -webkit-align-items: center; align-items: center;
-  font-size: 12px; font-family: 'DM Mono', monospace;
-  padding: 4px 10px; border-radius: 20px; margin-top: 12px;
-}
+.gps-value.loading { color: var(--warn); animation: blink 1s infinite; }
+.gps-value.ok { color: var(--accent); }
+.gps-value.error { color: var(--err); }
+.accuracy-badge { display: inline-flex; align-items: center; font-size: 12px; font-family: 'DM Mono', monospace; padding: 4px 10px; border-radius: 20px; margin-top: 12px; }
 .accuracy-badge.good { background: var(--accent-dim); color: var(--accent); }
-.accuracy-badge.bad  { background: rgba(245,158,11,.12); color: var(--warn); }
-.accuracy-badge .dot {
-  width: 6px; height: 6px; border-radius: 50%;
-  background: currentColor; margin-right: 5px;
-}
-.gps-retry {
-  display: block; width: 100%; margin-top: 12px;
-  padding: 10px; border: 1px solid var(--border);
-  border-radius: 10px; background: transparent;
-  color: var(--warn); font-size: 13px;
-  font-family: 'Noto Sans TC', sans-serif;
-  cursor: pointer; text-align: center;
-}
+.accuracy-badge.bad { background: rgba(245,158,11,.12); color: var(--warn); }
+.accuracy-badge .dot { width: 6px; height: 6px; border-radius: 50%; background: currentColor; margin-right: 5px; }
+.gps-retry { display: block; width: 100%; margin-top: 12px; padding: 10px; border: 1px solid var(--border); border-radius: 10px; background: transparent; color: var(--warn); font-size: 13px; font-family: 'Noto Sans TC', sans-serif; cursor: pointer; text-align: center; }
 
-.status-msg {
-  width: 100%;
-  padding: 14px 16px;
-  border-radius: var(--radius);
-  font-size: 14px; line-height: 1.6;
-  white-space: pre-line;
-  display: none;
-}
+/* Status */
+.status-msg { width: 100%; padding: 14px 16px; border-radius: var(--radius); font-size: 14px; line-height: 1.6; white-space: pre-line; display: none; }
 .status-msg.show { display: block; }
 .status-msg.ok   { background: var(--accent-dim); border: 1px solid rgba(74,222,128,.3); color: var(--accent); }
 .status-msg.err  { background: rgba(248,113,113,.1); border: 1px solid rgba(248,113,113,.3); color: var(--err); }
 .status-msg.info { background: rgba(245,158,11,.1); border: 1px solid rgba(245,158,11,.25); color: var(--warn); }
 
-.btn-row {
-  width: 100%;
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 12px;
-}
-button {
-  font-family: 'Noto Sans TC', -apple-system, sans-serif;
-  cursor: pointer;
-  -webkit-tap-highlight-color: transparent;
-}
-.btn-primary {
-  width: 100%; padding: 16px 12px;
-  font-size: 17px; font-weight: 700;
-  border: none; border-radius: var(--radius);
-  background: var(--accent); color: #0d0f14;
-  box-shadow: 0 0 24px var(--accent-glow);
-  position: relative; overflow: hidden;
-  -webkit-transition: -webkit-transform .15s, box-shadow .15s;
-  transition: transform .15s, box-shadow .15s;
-  letter-spacing: .5px;
-}
-.btn-primary:active { -webkit-transform: scale(.97); transform: scale(.97); }
-.btn-primary:disabled {
-  background: var(--border); color: var(--muted);
-  box-shadow: none; cursor: not-allowed;
-}
-.btn-out {
-  padding: 16px 12px;
-  font-size: 17px; font-weight: 700;
-  background: transparent; color: var(--accent);
-  border: 2px solid var(--accent);
-  border-radius: var(--radius);
-  position: relative; overflow: hidden;
-  -webkit-transition: -webkit-transform .15s;
-  transition: transform .15s;
-  letter-spacing: .5px;
-}
-.btn-out:active { -webkit-transform: scale(.97); transform: scale(.97); }
-.btn-out:disabled {
-  background: var(--border); color: var(--muted);
-  box-shadow: none; cursor: not-allowed;
-  border-color: var(--border);
-}
-
-.ripple {
-  position: absolute; border-radius: 50%;
-  background: rgba(255,255,255,.25);
-  -webkit-transform: scale(0); transform: scale(0);
-  -webkit-animation: ripple .55s linear; animation: ripple .55s linear;
-  pointer-events: none;
-}
-@-webkit-keyframes ripple { to { -webkit-transform: scale(4); opacity: 0; } }
+/* Buttons */
+.btn-row { width: 100%; display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+button { font-family: 'Noto Sans TC', -apple-system, sans-serif; cursor: pointer; -webkit-tap-highlight-color: transparent; }
+.btn-primary { width: 100%; padding: 16px 12px; font-size: 17px; font-weight: 700; border: none; border-radius: var(--radius); background: var(--accent); color: #0d0f14; box-shadow: 0 0 24px var(--accent-glow); position: relative; overflow: hidden; transition: transform .15s, box-shadow .15s; letter-spacing: .5px; }
+.btn-primary:active { transform: scale(.97); }
+.btn-primary:disabled { background: var(--border); color: var(--muted); box-shadow: none; cursor: not-allowed; }
+.btn-out { padding: 16px 12px; font-size: 17px; font-weight: 700; background: transparent; color: var(--accent); border: 2px solid var(--accent); border-radius: var(--radius); position: relative; overflow: hidden; transition: transform .15s; letter-spacing: .5px; }
+.btn-out:active { transform: scale(.97); }
+.btn-out:disabled { background: var(--border); color: var(--muted); box-shadow: none; cursor: not-allowed; border-color: var(--border); }
+.ripple { position: absolute; border-radius: 50%; background: rgba(255,255,255,.25); transform: scale(0); animation: ripple .55s linear; pointer-events: none; }
 @keyframes ripple { to { transform: scale(4); opacity: 0; } }
+.spinner { display: inline-block; width: 16px; height: 16px; border: 2px solid rgba(0,0,0,.2); border-top-color: currentColor; border-radius: 50%; animation: spin .7s linear infinite; vertical-align: middle; margin-right: 6px; }
 
-.spinner {
-  display: inline-block; width: 16px; height: 16px;
-  border: 2px solid rgba(0,0,0,.2);
-  border-top-color: currentColor; border-radius: 50%;
-  -webkit-animation: spin .7s linear infinite; animation: spin .7s linear infinite;
-  vertical-align: middle; margin-right: 6px;
-}
-
-.history-row {
-  display: -webkit-flex; display: flex;
-  -webkit-justify-content: space-between; justify-content: space-between;
-  -webkit-align-items: flex-start; align-items: flex-start;
-  padding: 10px 0;
-  border-bottom: 1px solid var(--border);
-  font-size: 14px;
-}
+/* History */
+.history-row { display: flex; justify-content: space-between; align-items: flex-start; padding: 10px 0; border-bottom: 1px solid var(--border); font-size: 14px; }
 .history-row:last-child { border-bottom: none; }
 .history-meta { font-size: 11px; color: var(--muted); margin-top: 3px; font-family: 'DM Mono', monospace; }
-.badge {
-  font-size: 11px; padding: 3px 9px;
-  border-radius: 20px; font-family: 'DM Mono', monospace;
-  white-space: nowrap;
-}
+.badge { font-size: 11px; padding: 3px 9px; border-radius: 20px; font-family: 'DM Mono', monospace; white-space: nowrap; }
 .badge-in  { background: var(--accent-dim); color: var(--accent); border: 1px solid rgba(74,222,128,.3); }
 .badge-out { background: rgba(107,114,128,.15); color: var(--muted); border: 1px solid var(--border); }
 .badge-rej { background: rgba(248,113,113,.12); color: var(--err); border: 1px solid rgba(248,113,113,.3); }
-.loading-text { text-align: center; color: var(--muted); padding: 16px; font-size: 13px; -webkit-animation: blink 1s infinite; animation: blink 1s infinite; }
+.loading-text { text-align: center; color: var(--muted); padding: 16px; font-size: 13px; animation: blink 1s infinite; }
 
-.err-msg { color: var(--err); font-size: 13px; margin-top: 10px; }
-
-.modal {
-  position: fixed;
-  top: 0; right: 0; bottom: 0; left: 0;
-  background: rgba(0,0,0,.75);
-  z-index: 999;
-  display: -webkit-flex; display: flex;
-  -webkit-align-items: center; align-items: center;
-  -webkit-justify-content: center; justify-content: center;
-  padding: 16px;
-}
+/* Modal */
+.modal { position: fixed; top: 0; right: 0; bottom: 0; left: 0; background: rgba(0,0,0,.75); z-index: 999; display: flex; align-items: center; justify-content: center; padding: 16px; }
 .modal.hidden { display: none; }
-.modal-inner {
-  background: var(--card);
-  border: 1px solid var(--border);
-  border-radius: var(--radius);
-  padding: 24px;
-  max-width: 420px; width: 100%;
-  max-height: 90vh; overflow-y: auto;
-}
+.modal-inner { background: var(--card); border: 1px solid var(--border); border-radius: var(--radius); padding: 24px; max-width: 420px; width: 100%; max-height: 90vh; overflow-y: auto; }
 .modal-inner h2 { font-size: 18px; margin-bottom: 12px; }
-.modal-inner h3 {
-  font-size: 11px; font-family: 'DM Mono', monospace;
-  letter-spacing: .15em; text-transform: uppercase;
-  color: var(--muted); margin: 16px 0 6px;
-}
+.modal-inner h3 { font-size: 11px; font-family: 'DM Mono', monospace; letter-spacing: .15em; text-transform: uppercase; color: var(--muted); margin: 16px 0 6px; }
 .modal-inner p  { font-size: 14px; line-height: 1.6; color: var(--muted); }
 .modal-inner ol { padding-left: 18px; font-size: 13px; line-height: 1.8; color: var(--muted); }
 .modal-inner ol b { color: var(--text); }
 
-.footer-hint {
-  font-size: 11px; color: var(--muted);
-  font-family: 'DM Mono', monospace;
-  opacity: .5; text-align: center;
-}
-
+.footer-hint { font-size: 11px; color: var(--muted); font-family: 'DM Mono', monospace; opacity: .5; text-align: center; }
 .hidden { display: none; }
-.fade-in { -webkit-animation: fadeIn .4s ease both; animation: fadeIn .4s ease both; }
-@-webkit-keyframes fadeIn { from{opacity:0;-webkit-transform:translateY(10px)} to{opacity:1;-webkit-transform:none} }
+.fade-in { animation: fadeIn .4s ease both; }
 @keyframes fadeIn { from{opacity:0;transform:translateY(10px)} to{opacity:1;transform:none} }
-@-webkit-keyframes blink { 0%,100%{opacity:1} 50%{opacity:.4} }
 @keyframes blink { 0%,100%{opacity:1} 50%{opacity:.4} }
-@-webkit-keyframes spin { to { -webkit-transform: rotate(360deg); } }
 @keyframes spin { to { transform: rotate(360deg); } }
 </style>
 </head>
@@ -374,18 +175,44 @@ button {
     <h1>員工<span>打卡</span>系統</h1>
   </div>
 
-  <div class="clock-card fade-in" style="-webkit-animation-delay:.05s;animation-delay:.05s">
+  <div class="clock-card fade-in" style="animation-delay:.05s">
     <div class="clock-time" id="clockTime">--:--:--</div>
     <div class="clock-date" id="clockDate">----/--/--</div>
   </div>
 
-  <!-- 步驟 1：輸入姓名 -->
-  <div id="pick-card" class="card hidden fade-in" style="-webkit-animation-delay:.1s;animation-delay:.1s">
+  <!-- 初始載入 -->
+  <div id="splash" class="splash fade-in">
+    <div class="splash-text">初始化中...</div>
+  </div>
+
+  <!-- LINE 未登入 -->
+  <div id="login-card" class="login-card hidden fade-in">
+    <p>請先用 LINE 登入<br>才能繼續打卡</p>
+    <button class="btn-line" id="btn-line-login">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="white" xmlns="http://www.w3.org/2000/svg">
+        <path d="M12 2C6.48 2 2 5.92 2 10.75c0 3.27 2.06 6.14 5.17 7.79-.23.85-.84 3.09-.97 3.57-.15.57.21.56.44.41.18-.12 2.89-1.92 4.07-2.7.42.06.85.09 1.29.09 5.52 0 10-3.92 10-8.75S17.52 2 12 2z"/>
+      </svg>
+      LINE 登入
+    </button>
+  </div>
+
+  <!-- LINE 已登入：頭像 + 名稱 + UID -->
+  <div id="line-profile-card" class="card hidden fade-in" style="animation-delay:.1s">
+    <div class="who">
+      <div class="user-avatar" id="line-avatar">👤</div>
+      <div class="user-info">
+        <div class="user-name" id="line-name">—</div>
+        <div class="user-uid" id="line-uid">UID: —</div>
+      </div>
+      <div class="login-badge">已登入</div>
+    </div>
+  </div>
+
+  <!-- 步驟 1：輸入姓名（LINE 登入後才顯示） -->
+  <div id="pick-card" class="card hidden fade-in" style="animation-delay:.15s">
     <div class="card-title">👤 身份確認</div>
     <label>請輸入你的姓名</label>
-    <input type="text" id="staff-input" autocomplete="off"
-           autocapitalize="off" autocorrect="off"
-           placeholder="例如：王小明">
+    <input type="text" id="staff-input" autocomplete="off" autocapitalize="off" autocorrect="off" placeholder="例如：王小明">
     <div class="hint">需與管理員建檔的「完整姓名」一致，僅供本人使用</div>
     <div id="name-err" class="err-msg hidden"></div>
     <div style="margin-top:14px">
@@ -393,62 +220,48 @@ button {
     </div>
   </div>
 
-  <!-- 步驟 2：who card -->
-  <div id="punch-card" class="card hidden fade-in" style="-webkit-animation-delay:.1s;animation-delay:.1s">
-    <div class="who">
-      <div class="user-avatar">👤</div>
-      <div class="user-info">
-        <div class="user-name" id="who-name">—</div>
-        <div class="user-sub">已驗證身份</div>
+  <!-- 步驟 2：confirmed who -->
+  <div id="punch-card" class="card hidden fade-in" style="animation-delay:.1s">
+    <div class="confirmed-who">
+      <div class="confirmed-avatar" id="confirmed-avatar">👤</div>
+      <div class="confirmed-info">
+        <div class="confirmed-name" id="who-name">—</div>
+        <div class="confirmed-sub">已驗證身份</div>
       </div>
       <div class="change-btn" id="change-staff">換人</div>
     </div>
   </div>
 
   <!-- GPS -->
-  <div id="gps-card" class="card hidden fade-in" style="-webkit-animation-delay:.15s;animation-delay:.15s">
+  <div id="gps-card" class="card hidden fade-in" style="animation-delay:.2s">
     <div class="card-title">📡 GPS 定位資訊</div>
-    <div class="gps-row">
-      <span class="gps-label">緯度 Lat</span>
-      <span class="gps-value loading" id="gpsLat">取得中...</span>
-    </div>
-    <div class="gps-row">
-      <span class="gps-label">經度 Lng</span>
-      <span class="gps-value loading" id="gpsLng">取得中...</span>
-    </div>
-    <div class="gps-row">
-      <span class="gps-label">精準度</span>
-      <span class="gps-value loading" id="gpsAcc">取得中...</span>
-    </div>
+    <div class="gps-row"><span class="gps-label">緯度 Lat</span><span class="gps-value loading" id="gpsLat">取得中...</span></div>
+    <div class="gps-row"><span class="gps-label">經度 Lng</span><span class="gps-value loading" id="gpsLng">取得中...</span></div>
+    <div class="gps-row"><span class="gps-label">精準度</span><span class="gps-value loading" id="gpsAcc">取得中...</span></div>
     <div id="accuracy-badge"></div>
     <button class="gps-retry hidden" id="gps-retry" onclick="prefetchPosition()">🔄 重新取得定位</button>
   </div>
 
-  <!-- PIN + 按鈕 -->
-  <div id="action-card" class="card hidden fade-in" style="-webkit-animation-delay:.2s;animation-delay:.2s">
+  <!-- PIN + 打卡 -->
+  <div id="action-card" class="card hidden fade-in" style="animation-delay:.25s">
     <label>手機末四碼</label>
-    <input id="pin-input" type="tel" inputmode="numeric" pattern="\d{4}"
-           maxlength="4" autocomplete="off" placeholder="• • • •">
+    <input id="pin-input" type="tel" inputmode="numeric" pattern="\d{4}" maxlength="4" autocomplete="off" placeholder="• • • •">
     <div class="hint">輸入你手機號碼最後 4 位數字</div>
     <div style="margin-top:14px" class="btn-row">
-      <button id="btn-in" class="btn-primary" disabled>
-        <span class="spinner hidden" id="spin-in"></span>上班打卡
-      </button>
-      <button id="btn-out" class="btn-out" disabled>
-        <span class="spinner hidden" id="spin-out"></span>下班打卡
-      </button>
+      <button id="btn-in" class="btn-primary" disabled><span class="spinner hidden" id="spin-in"></span>上班打卡</button>
+      <button id="btn-out" class="btn-out" disabled><span class="spinner hidden" id="spin-out"></span>下班打卡</button>
     </div>
   </div>
 
   <div class="status-msg" id="status-msg"></div>
 
   <!-- 近期紀錄 -->
-  <div id="history-card" class="card hidden fade-in" style="-webkit-animation-delay:.25s;animation-delay:.25s">
+  <div id="history-card" class="card hidden fade-in" style="animation-delay:.3s">
     <div class="card-title">📋 近期打卡紀錄</div>
     <div id="history" class="loading-text">載入中...</div>
   </div>
 
-  <div class="footer-hint fade-in" style="-webkit-animation-delay:.3s;animation-delay:.3s">
+  <div class="footer-hint fade-in" style="animation-delay:.35s">
     © Chekcin · GPS 由裝置感測器直接取得 · 無法手動修改
   </div>
 
@@ -460,48 +273,36 @@ button {
     <h2>📍 需要位置權限</h2>
     <p>本系統強制以 GPS 驗證打卡地點。請依下列步驟手動開啟後再回來：</p>
     <h3>iOS Safari</h3>
-    <ol>
-      <li>「設定」→「Safari」→ <b>位置</b> → 詢問或允許</li>
-      <li>重新整理頁面 → 按下方「重試」</li>
-    </ol>
+    <ol><li>「設定」→「Safari」→ <b>位置</b> → 詢問或允許</li><li>重新整理頁面 → 按下方「重試」</li></ol>
     <h3>Android Chrome</h3>
-    <ol>
-      <li>網址列左側「🔒」→ <b>權限</b> → 位置 → 允許</li>
-      <li>按下方「重試」</li>
-    </ol>
-    <div style="margin-top:14px">
-      <button id="loc-retry" class="btn-primary">重試取得位置</button>
-    </div>
+    <ol><li>網址列左側「🔒」→ <b>權限</b> → 位置 → 允許</li><li>按下方「重試」</li></ol>
+    <div style="margin-top:14px"><button id="loc-retry" class="btn-primary">重試取得位置</button></div>
   </div>
 </div>
 
 <script>
 // ================================================================
-//  GAS Web App 網址
-// ================================================================
 const GAS_URL = 'https://script.google.com/macros/s/AKfycbzw9qjSYgQeJdlSMHryRkMVSixXYWucFMWWPF4N4acwOZTxTvmAcN1EZDuriSOLMTs5aA/exec';
+const LIFF_ID = '2010297513-8W4WWzSx';
+const LS_KEY  = 'chekcin_staff';
+const MAX_ACCURACY = 100;
 // ================================================================
 
-const LS_KEY = 'chekcin_staff';
-const MAX_ACCURACY = 100;
 const $ = id => document.getElementById(id);
-
 let staff = null;
-let gpsReady = false;
+let lineUserId = null;   // 純紀錄用，不做驗證
+let lineAvatar = null;
 
 // ── Clock ──
 (function tick() {
-  var now = new Date();
-  var p = n => String(n).padStart(2, '0');
-  $('clockTime').textContent = p(now.getHours()) + ':' + p(now.getMinutes()) + ':' + p(now.getSeconds());
+  var now = new Date(), p = n => String(n).padStart(2, '0');
   var days = ['日','一','二','三','四','五','六'];
-  $('clockDate').textContent =
-    now.getFullYear() + '/' + p(now.getMonth()+1) + '/' + p(now.getDate()) +
-    '（週' + days[now.getDay()] + '）';
+  $('clockTime').textContent = p(now.getHours()) + ':' + p(now.getMinutes()) + ':' + p(now.getSeconds());
+  $('clockDate').textContent = now.getFullYear() + '/' + p(now.getMonth()+1) + '/' + p(now.getDate()) + '（週' + days[now.getDay()] + '）';
   setTimeout(tick, 1000);
 })();
 
-// ── GAS API（GET + query string，唯一能繞過 GAS CORS 限制的方法）──
+// ── GAS API（GET）──
 async function gasCall(action, params) {
   const qs = new URLSearchParams({ action });
   Object.entries(params || {}).forEach(([k, v]) => qs.set(k, String(v)));
@@ -512,8 +313,34 @@ async function gasCall(action, params) {
   return json.result;
 }
 
-// ── Init ──
-function init() {
+// ── LIFF Init ──
+async function init() {
+  try {
+    await liff.init({ liffId: LIFF_ID });
+    if (!liff.isLoggedIn()) {
+      $('splash').classList.add('hidden');
+      $('login-card').classList.remove('hidden');
+      return;
+    }
+    // 背景取得 LINE 個人資料（純紀錄用）
+    try {
+      const profile = await liff.getProfile();
+      lineUserId = profile.userId;
+      lineAvatar = profile.pictureUrl || null;
+      // 顯示 LINE 個人資料卡
+      $('line-name').textContent = profile.displayName;
+      const uid = profile.userId || '';
+      $('line-uid').textContent = 'UID: ' + uid.slice(0, 16) + (uid.length > 16 ? '...' : '');
+      if (lineAvatar) $('line-avatar').innerHTML = `<img src="${lineAvatar}" alt="">`;
+      $('line-profile-card').classList.remove('hidden');
+    } catch(_) {}
+  } catch(_) {
+    // LIFF 不可用，直接進原本流程
+  }
+
+  $('splash').classList.add('hidden');
+
+  // 繼續原本流程
   const saved = JSON.parse(localStorage.getItem(LS_KEY) || 'null');
   if (saved && saved.id) {
     staff = saved;
@@ -524,6 +351,7 @@ function init() {
   }
 }
 
+// ── 原本流程 ──
 function showPickerUI() {
   $('pick-card').classList.remove('hidden');
   $('punch-card').classList.add('hidden');
@@ -533,7 +361,6 @@ function showPickerUI() {
   $('status-msg').className = 'status-msg';
   $('staff-input').value = '';
   $('name-err').classList.add('hidden');
-  gpsReady = false;
   setTimeout(() => $('staff-input').focus(), 100);
 }
 
@@ -544,68 +371,13 @@ function showPunchUI() {
   $('action-card').classList.remove('hidden');
   $('history-card').classList.remove('hidden');
   $('who-name').textContent = staff.name;
+  // LINE 頭像也放到 confirmed avatar
+  if (lineAvatar) $('confirmed-avatar').innerHTML = `<img src="${lineAvatar}" alt="">`;
   $('btn-in').disabled = true;
   $('btn-out').disabled = true;
   prefetchPosition();
 }
 
-// ── GPS ──
-function prefetchPosition() {
-  $('gps-retry').classList.add('hidden');
-  setGpsVal('gpsLat', '取得中...', 'loading');
-  setGpsVal('gpsLng', '取得中...', 'loading');
-  setGpsVal('gpsAcc', '取得中...', 'loading');
-  $('accuracy-badge').innerHTML = '';
-  gpsReady = false;
-
-  getPosition()
-    .then(pos => {
-      const { latitude, longitude, accuracy } = pos.coords;
-      setGpsVal('gpsLat', latitude.toFixed(6), 'ok');
-      setGpsVal('gpsLng', longitude.toFixed(6), 'ok');
-      setGpsVal('gpsAcc', Math.round(accuracy) + ' 公尺', accuracy <= MAX_ACCURACY ? 'ok' : 'loading');
-      const b = $('accuracy-badge');
-      if (accuracy <= MAX_ACCURACY) {
-        b.innerHTML = '<div class="accuracy-badge good"><span class="dot"></span>定位精準，可以打卡</div>';
-      } else {
-        b.innerHTML = '<div class="accuracy-badge bad"><span class="dot"></span>精準度不足，建議移至空曠處</div>';
-      }
-      gpsReady = true;
-      $('btn-in').disabled = false;
-      $('btn-out').disabled = false;
-    })
-    .catch(async e => {
-      setGpsError('失敗');
-      $('gps-retry').classList.remove('hidden');
-      showStatus(e.message, 'err');
-      await checkLocationPermission();
-    });
-}
-
-function setGpsVal(id, val, cls) {
-  var el = $(id);
-  el.textContent = val;
-  el.className = 'gps-value ' + cls;
-}
-function setGpsError(msg) {
-  ['gpsLat','gpsLng','gpsAcc'].forEach(id => setGpsVal(id, msg, 'error'));
-}
-
-async function checkLocationPermission() {
-  if (!navigator.permissions) return;
-  try {
-    const perm = await navigator.permissions.query({ name: 'geolocation' });
-    if (perm.state === 'denied') showLocationDeniedModal();
-    perm.onchange = () => {
-      if (perm.state === 'granted') { hideLocationDeniedModal(); prefetchPosition(); }
-    };
-  } catch(_) {}
-}
-
-function showLocationDeniedModal() { $('loc-modal').classList.remove('hidden'); }
-function hideLocationDeniedModal() { $('loc-modal').classList.add('hidden'); }
-
-// ── Staff lookup ──
 async function confirmStaff() {
   const name = $('staff-input').value.trim();
   if (!name) { showNameError('請輸入姓名'); return; }
@@ -627,11 +399,10 @@ async function confirmStaff() {
 }
 
 function showNameError(msg) {
-  const el = $('name-err');
-  el.textContent = msg;
-  el.classList.remove('hidden');
+  const el = $('name-err'); el.textContent = msg; el.classList.remove('hidden');
 }
 
+$('btn-line-login').addEventListener('click', () => liff.login());
 $('confirm-staff').addEventListener('click', confirmStaff);
 $('staff-input').addEventListener('keydown', e => { if (e.key === 'Enter') confirmStaff(); });
 $('change-staff').addEventListener('click', () => {
@@ -641,16 +412,52 @@ $('change-staff').addEventListener('click', () => {
   showPickerUI();
 });
 
+// ── GPS ──
+function prefetchPosition() {
+  $('gps-retry').classList.add('hidden');
+  setGpsVal('gpsLat', '取得中...', 'loading');
+  setGpsVal('gpsLng', '取得中...', 'loading');
+  setGpsVal('gpsAcc', '取得中...', 'loading');
+  $('accuracy-badge').innerHTML = '';
+  getPosition()
+    .then(pos => {
+      const { latitude, longitude, accuracy } = pos.coords;
+      setGpsVal('gpsLat', latitude.toFixed(6), 'ok');
+      setGpsVal('gpsLng', longitude.toFixed(6), 'ok');
+      setGpsVal('gpsAcc', Math.round(accuracy) + ' 公尺', accuracy <= MAX_ACCURACY ? 'ok' : 'loading');
+      const b = $('accuracy-badge');
+      b.innerHTML = accuracy <= MAX_ACCURACY
+        ? '<div class="accuracy-badge good"><span class="dot"></span>定位精準，可以打卡</div>'
+        : '<div class="accuracy-badge bad"><span class="dot"></span>精準度不足，建議移至空曠處</div>';
+      $('btn-in').disabled = false;
+      $('btn-out').disabled = false;
+    })
+    .catch(async e => {
+      setGpsError('失敗');
+      $('gps-retry').classList.remove('hidden');
+      showStatus(e.message, 'err');
+      await checkLocationPermission();
+    });
+}
+
+function setGpsVal(id, val, cls) { var el=$(id); el.textContent=val; el.className='gps-value '+cls; }
+function setGpsError(msg) { ['gpsLat','gpsLng','gpsAcc'].forEach(id => setGpsVal(id, msg, 'error')); }
+async function checkLocationPermission() {
+  if (!navigator.permissions) return;
+  try {
+    const perm = await navigator.permissions.query({ name: 'geolocation' });
+    if (perm.state === 'denied') $('loc-modal').classList.remove('hidden');
+    perm.onchange = () => { if (perm.state === 'granted') { $('loc-modal').classList.add('hidden'); prefetchPosition(); } };
+  } catch(_) {}
+}
+
 // ── Punch ──
 function getPosition() {
   return new Promise((resolve, reject) => {
     if (!navigator.geolocation) return reject(new Error('此裝置不支援定位'));
     navigator.geolocation.getCurrentPosition(
       p => resolve(p),
-      e => {
-        const msgs = { 1:'請允許瀏覽器使用位置權限', 2:'無法取得位置（GPS 訊號弱？）', 3:'定位逾時，請重試' };
-        reject(new Error(msgs[e.code] || '定位失敗：' + e.message));
-      },
+      e => { const msgs={1:'請允許瀏覽器使用位置權限',2:'無法取得位置（GPS 訊號弱？）',3:'定位逾時，請重試'}; reject(new Error(msgs[e.code]||'定位失敗：'+e.message)); },
       { enableHighAccuracy: true, timeout: 15000, maximumAge: 0 }
     );
   });
@@ -658,165 +465,98 @@ function getPosition() {
 
 async function punch(type) {
   const pin = $('pin-input').value.trim();
-  if (!/^\d{4}$/.test(pin)) {
-    showStatus('請先輸入手機末四碼（4 位數字）', 'err');
-    $('pin-input').focus();
-    return;
-  }
-
+  if (!/^\d{4}$/.test(pin)) { showStatus('請先輸入手機末四碼（4 位數字）', 'err'); $('pin-input').focus(); return; }
   const spinId = type === 'in' ? 'spin-in' : 'spin-out';
-  $('btn-in').disabled = true;
-  $('btn-out').disabled = true;
+  $('btn-in').disabled = true; $('btn-out').disabled = true;
   $(spinId).classList.remove('hidden');
   showStatus('📡 取得最新定位中...', 'info');
-  setGpsVal('gpsLat', '取得中...', 'loading');
-  setGpsVal('gpsLng', '取得中...', 'loading');
-  setGpsVal('gpsAcc', '取得中...', 'loading');
-
+  setGpsVal('gpsLat','取得中...','loading'); setGpsVal('gpsLng','取得中...','loading'); setGpsVal('gpsAcc','取得中...','loading');
   let pos;
-  try {
-    pos = await getPosition();
-  } catch(e) {
-    $(spinId).classList.add('hidden');
-    $('btn-in').disabled = false;
-    $('btn-out').disabled = false;
-    showStatus('❌ ' + e.message, 'err');
-    setGpsError('失敗');
-    await checkLocationPermission();
-    return;
+  try { pos = await getPosition(); } catch(e) {
+    $(spinId).classList.add('hidden'); $('btn-in').disabled=false; $('btn-out').disabled=false;
+    showStatus('❌ '+e.message,'err'); setGpsError('失敗'); await checkLocationPermission(); return;
   }
-
-  const { latitude: lat, longitude: lng, accuracy } = pos.coords;
+  const { latitude:lat, longitude:lng, accuracy } = pos.coords;
   setGpsVal('gpsLat', lat.toFixed(6), 'ok');
   setGpsVal('gpsLng', lng.toFixed(6), 'ok');
-  setGpsVal('gpsAcc', Math.round(accuracy) + ' 公尺', accuracy <= MAX_ACCURACY ? 'ok' : 'loading');
+  setGpsVal('gpsAcc', Math.round(accuracy)+' 公尺', accuracy<=MAX_ACCURACY?'ok':'loading');
   showStatus('🛰️ 比對站點中...', 'info');
-
   try {
-    const data = await gasCall('submitPunch', {
-      staffName: staff.name, pin, type, lat, lng, accuracy
-    });
+    const params = { staffName: staff.name, pin, type, lat, lng, accuracy };
+    if (lineUserId) params.lineUserId = lineUserId;  // 附帶 LINE ID 做紀錄
+    const data = await gasCall('submitPunch', params);
     $(spinId).classList.add('hidden');
     handlePunchResult(data);
   } catch(e) {
-    $(spinId).classList.add('hidden');
-    $('btn-in').disabled = false;
-    $('btn-out').disabled = false;
-    showStatus('❌ 系統錯誤：' + escapeHtml(e.message || String(e)), 'err');
+    $(spinId).classList.add('hidden'); $('btn-in').disabled=false; $('btn-out').disabled=false;
+    showStatus('❌ 系統錯誤：'+escapeHtml(e.message||String(e)),'err');
   }
 }
 
 function handlePunchResult(data) {
   if (data.ok) {
     const td = data.time_diff_min;
-    let timeNote = '';
-    if (td !== '' && td !== null && td !== undefined) {
-      if (td === 0)    timeNote = '（準時）';
-      else if (td > 0) timeNote = `（晚 ${td} 分）`;
-      else             timeNote = `（早 ${-td} 分）`;
-    }
-    showStatus(
-      `✅ ${data.type === 'in' ? '上班' : '下班'}打卡成功\n` +
-      `場地：${escapeHtml(data.scheduled_venue)}\n` +
-      `時間：${escapeHtml(data.scheduled_time)} ${timeNote}\n` +
-      `距離：${data.distance_m}m`,
-      'ok'
-    );
+    let timeNote = td===0?'（準時）':td>0?`（晚 ${td} 分）`:td!=null&&td!==''?`（早 ${-td} 分）`:'';
+    showStatus(`✅ ${data.type==='in'?'上班':'下班'}打卡成功\n場地：${escapeHtml(data.scheduled_venue)}\n時間：${escapeHtml(data.scheduled_time)} ${timeNote}\n距離：${data.distance_m}m`, 'ok');
     $('pin-input').value = '';
   } else {
     let msg;
     switch (data.reason) {
-      case 'pin_required':       msg = '請輸入手機末四碼'; break;
-      case 'pin_mismatch':       msg = '手機末四碼錯誤，請確認後重試'; $('pin-input').value=''; $('pin-input').focus(); break;
-      case 'pin_not_configured': msg = '管理員尚未設定你的手機號碼，請聯絡管理員'; break;
-      case 'no_schedule':        msg = data.message || '你今日未排班，無法打卡'; break;
-      case 'wrong_location':     msg = `不在預定場地範圍：「${escapeHtml(data.scheduled_venue)}」\n距離 ${data.distance_m}m`; break;
-      case 'unknown_venue':      msg = `班表場地「${escapeHtml(data.venue || '')}」不在場地對照表，請聯絡管理員`; break;
-      case 'low_accuracy':       msg = `GPS 精度過低 (±${data.accuracy_m}m)，請移至空曠處重試`; break;
+      case 'pin_required':       msg='請輸入手機末四碼'; break;
+      case 'pin_mismatch':       msg='手機末四碼錯誤，請確認後重試'; $('pin-input').value=''; $('pin-input').focus(); break;
+      case 'pin_not_configured': msg='管理員尚未設定你的手機號碼，請聯絡管理員'; break;
+      case 'no_schedule':        msg=data.message||'你今日未排班，無法打卡'; break;
+      case 'wrong_location':     msg=`不在預定場地範圍：「${escapeHtml(data.scheduled_venue)}」\n距離 ${data.distance_m}m`; break;
+      case 'unknown_venue':      msg=`班表場地「${escapeHtml(data.venue||'')}」不在場地對照表，請聯絡管理員`; break;
+      case 'low_accuracy':       msg=`GPS 精度過低 (±${data.accuracy_m}m)，請移至空曠處重試`; break;
       case 'staff_not_found':
-        msg = '找不到你的資料，請重新輸入姓名';
+        msg='找不到你的資料，請重新輸入姓名';
         localStorage.removeItem(LS_KEY);
-        setTimeout(() => { staff = null; showPickerUI(); }, 2000);
+        setTimeout(()=>{ staff=null; showPickerUI(); }, 2000);
         break;
-      default: msg = data.message || data.reason || '未知錯誤';
+      default: msg=data.message||data.reason||'未知錯誤';
     }
-    showStatus('❌ ' + msg, 'err');
+    showStatus('❌ '+msg,'err');
   }
-  $('btn-in').disabled = false;
-  $('btn-out').disabled = false;
+  $('btn-in').disabled=false; $('btn-out').disabled=false;
   loadHistory();
 }
 
 // ── History ──
 async function loadHistory() {
   if (!staff) return;
-  $('history').className = 'loading-text';
-  $('history').textContent = '載入中...';
+  $('history').className='loading-text'; $('history').textContent='載入中...';
   try {
     const list = await gasCall('getMyPunches', { staffName: staff.name, days: 7 });
-    if (!list || list.length === 0) {
-      $('history').className = '';
-      $('history').innerHTML = '<div class="history-meta" style="padding:8px 0">尚無近期打卡紀錄</div>';
-      return;
-    }
-    $('history').className = '';
-    $('history').innerHTML = list.map(p => {
-      const ok = p.status === 'ok';
-      const cls = !ok ? 'badge-rej' : (p.type === 'in' ? 'badge-in' : 'badge-out');
-      const tag = !ok ? statusLabel(p.status) : (p.type === 'in' ? '↑ 上班' : '↓ 下班');
-      let timeNote = '';
-      if (p.time_diff_min !== '' && p.time_diff_min !== null && p.time_diff_min !== undefined) {
-        const td = Number(p.time_diff_min);
-        if (td > 0)      timeNote = ` · 晚 ${td} 分`;
-        else if (td < 0) timeNote = ` · 早 ${-td} 分`;
-      }
-      return `<div class="history-row">
-        <div>
-          <div><span class="badge ${cls}">${tag}</span>&nbsp; ${escapeHtml(p.venue || '—')}</div>
-          <div class="history-meta">${escapeHtml(p.punched_at)} · ${p.distance_m || 0}m${timeNote}</div>
-        </div>
-      </div>`;
+    if (!list||list.length===0) { $('history').className=''; $('history').innerHTML='<div class="history-meta" style="padding:8px 0">尚無近期打卡紀錄</div>'; return; }
+    $('history').className='';
+    $('history').innerHTML=list.map(p=>{
+      const ok=p.status==='ok', cls=!ok?'badge-rej':(p.type==='in'?'badge-in':'badge-out');
+      const tag=!ok?statusLabel(p.status):(p.type==='in'?'↑ 上班':'↓ 下班');
+      let timeNote='';
+      if(p.time_diff_min!==''&&p.time_diff_min!=null){const td=Number(p.time_diff_min);if(td>0)timeNote=` · 晚 ${td} 分`;else if(td<0)timeNote=` · 早 ${-td} 分`;}
+      return `<div class="history-row"><div><div><span class="badge ${cls}">${tag}</span>&nbsp; ${escapeHtml(p.venue||'—')}</div><div class="history-meta">${escapeHtml(p.punched_at)} · ${p.distance_m||0}m${timeNote}</div></div></div>`;
     }).join('');
-  } catch(_) {
-    $('history').className = '';
-    $('history').innerHTML = '<div class="history-meta" style="padding:8px 0">載入失敗，請重整頁面</div>';
-  }
+  } catch(_) { $('history').className=''; $('history').innerHTML='<div class="history-meta" style="padding:8px 0">載入失敗，請重整頁面</div>'; }
 }
 
-function statusLabel(s) {
-  return ({
-    wrong_location:'錯地點', unknown_venue:'場地錯', no_schedule:'無排班',
-    in_too_early:'太早', in_too_late:'太晚', out_before_start:'未開始', out_too_late:'太晚',
-  })[s] || '失敗';
-}
+function statusLabel(s){return({wrong_location:'錯地點',unknown_venue:'場地錯',no_schedule:'無排班',in_too_early:'太早',in_too_late:'太晚',out_before_start:'未開始',out_too_late:'太晚'})[s]||'失敗';}
+function showStatus(msg,type){var el=$('status-msg');el.textContent=msg;el.className='status-msg show '+type;}
+function escapeHtml(s){return String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
 
-function showStatus(msg, type) {
-  var el = $('status-msg');
-  el.textContent = msg;
-  el.className = 'status-msg show ' + type;
-}
-
-function escapeHtml(s) {
-  return String(s ?? '').replace(/[&<>"']/g, c =>
-    ({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;' }[c]));
-}
-
-['btn-in','btn-out'].forEach(id => {
-  $(id).addEventListener('click', function(e) {
-    if (this.disabled) return;
-    const r = this.getBoundingClientRect();
-    const ripple = document.createElement('span');
-    ripple.className = 'ripple';
-    const size = Math.max(r.width, r.height);
-    ripple.style.cssText = `width:${size}px;height:${size}px;left:${e.clientX-r.left-size/2}px;top:${e.clientY-r.top-size/2}px`;
-    this.appendChild(ripple);
-    setTimeout(() => ripple.parentNode && ripple.parentNode.removeChild(ripple), 600);
+['btn-in','btn-out'].forEach(id=>{
+  $(id).addEventListener('click',function(e){
+    if(this.disabled)return;
+    const r=this.getBoundingClientRect(),ripple=document.createElement('span');
+    ripple.className='ripple';const size=Math.max(r.width,r.height);
+    ripple.style.cssText=`width:${size}px;height:${size}px;left:${e.clientX-r.left-size/2}px;top:${e.clientY-r.top-size/2}px`;
+    this.appendChild(ripple);setTimeout(()=>ripple.parentNode&&ripple.parentNode.removeChild(ripple),600);
   });
 });
 
-$('btn-in').addEventListener('click', () => punch('in'));
-$('btn-out').addEventListener('click', () => punch('out'));
-$('loc-retry').addEventListener('click', () => { hideLocationDeniedModal(); prefetchPosition(); });
+$('btn-in').addEventListener('click', ()=>punch('in'));
+$('btn-out').addEventListener('click', ()=>punch('out'));
+$('loc-retry').addEventListener('click', ()=>{ $('loc-modal').classList.add('hidden'); prefetchPosition(); });
 
 init();
 </script>
