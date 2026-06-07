@@ -208,6 +208,10 @@ button { font-family: 'Noto Sans TC', -apple-system, sans-serif; cursor: pointer
     </div>
   </div>
 
+  <!-- Debug 區塊（測試完可刪） -->
+  <div id="debug-lineid" style="display:none;width:100%;padding:10px 14px;background:#1c2030;border:1px solid #f59e0b;border-radius:10px;font-family:'DM Mono',monospace;font-size:12px;color:#f59e0b;word-break:break-all;"></div>
+  <div id="debug-params" style="display:none;width:100%;padding:10px 14px;background:#1c2030;border:1px solid #60a5fa;border-radius:10px;font-family:'DM Mono',monospace;font-size:12px;color:#60a5fa;word-break:break-all;"></div>
+
   <!-- 步驟 1：輸入姓名（LINE 登入後才顯示） -->
   <div id="pick-card" class="card hidden fade-in" style="animation-delay:.15s">
     <div class="card-title">👤 身份確認</div>
@@ -282,7 +286,7 @@ button { font-family: 'Noto Sans TC', -apple-system, sans-serif; cursor: pointer
 
 <script>
 // ================================================================
-const GAS_URL = 'https://script.google.com/macros/s/AKfycbzNnW9a2BhzUFhhw95ce2EoySte3Jd0SDtqgIdDxHESE71kGM2LPvwslSvRK0ouiQxVMQ/exec';
+const GAS_URL = 'https://script.google.com/macros/s/AKfycbzw9qjSYgQeJdlSMHryRkMVSixXYWucFMWWPF4N4acwOZTxTvmAcN1EZDuriSOLMTs5aA/exec';
 const LIFF_ID = '2010297513-8W4WWzSx';
 const LS_KEY  = 'chekcin_staff';
 const MAX_ACCURACY = 100;
@@ -330,12 +334,20 @@ async function init() {
       // 顯示 LINE 個人資料卡
       $('line-name').textContent = profile.displayName;
       const uid = profile.userId || '';
-      $('line-uid').textContent = 'UID: ' + uid.slice(0, 16) + (uid.length > 16 ? '...' : '');
+      $('line-uid').textContent = 'UID: ' + uid;
+      // Debug: 顯示完整 lineUserId
+      $('debug-lineid').textContent = '✅ lineUserId 已取得：' + uid;
+      $('debug-lineid').style.display = 'block';
       if (lineAvatar) $('line-avatar').innerHTML = `<img src="${lineAvatar}" alt="">`;
       $('line-profile-card').classList.remove('hidden');
-    } catch(_) {}
-  } catch(_) {
+    } catch(e) {
+      $('debug-lineid').textContent = '❌ liff.getProfile() 失敗：' + e.message;
+      $('debug-lineid').style.display = 'block';
+    }
+  } catch(e) {
     // LIFF 不可用，直接進原本流程
+    $('debug-lineid').textContent = '❌ liff.init() 失敗：' + e.message;
+    $('debug-lineid').style.display = 'block';
   }
 
   $('splash').classList.add('hidden');
@@ -484,6 +496,9 @@ async function punch(type) {
   try {
     const params = { staffName: staff.name, pin, type, lat, lng, accuracy };
     if (lineUserId) params.lineUserId = lineUserId;  // 附帶 LINE ID 做紀錄
+    // Debug: 顯示送出的 params
+    $('debug-params').textContent = '📤 送出：lineUserId=' + (params.lineUserId || '（未帶）');
+    $('debug-params').style.display = 'block';
     const data = await gasCall('submitPunch', params);
     $(spinId).classList.add('hidden');
     handlePunchResult(data);
