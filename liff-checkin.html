@@ -196,23 +196,20 @@ button { font-family: 'Noto Sans TC', -apple-system, sans-serif; cursor: pointer
     </button>
   </div>
 
-  <!-- LINE 已登入：頭像 + 名稱 + UID -->
-  <div id="line-profile-card" class="card hidden fade-in" style="animation-delay:.1s">
-    <div class="who">
-      <div class="user-avatar" id="line-avatar">👤</div>
-      <div class="user-info">
-        <div class="user-name" id="line-name">—</div>
-        <div class="user-uid" id="line-uid">UID: —</div>
+  <!-- 身份卡：LINE + 確認姓名（方案 C） -->
+  <div id="identity-card" class="card hidden fade-in" style="animation-delay:.1s">
+    <div style="border-left:3px solid var(--line-green);padding-left:12px;">
+      <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
+        <span id="line-name" style="font-size:15px;font-weight:700;">—</span>
+        <div class="login-badge">LINE 已登入</div>
       </div>
-      <div class="login-badge">已登入</div>
+      <div id="line-uid" style="font-size:11px;color:var(--muted);margin-top:4px;font-family:'DM Mono',monospace;word-break:break-all;">—</div>
+    </div>
+    <div id="confirmed-section" class="hidden" style="border-top:1px solid var(--border);margin-top:12px;padding-top:12px;display:flex;justify-content:space-between;align-items:center;">
+      <span id="who-name" style="font-size:16px;font-weight:700;">—</span>
+      <div class="change-btn" id="change-staff">換人</div>
     </div>
   </div>
-
-  <!-- Debug 區塊（測試完可刪） -->
-  <div id="debug-lineid" style="display:none;width:100%;padding:10px 14px;background:#1c2030;border:1px solid #f59e0b;border-radius:10px;font-family:'DM Mono',monospace;font-size:12px;color:#f59e0b;word-break:break-all;"></div>
-  <div id="debug-params" style="display:none;width:100%;padding:10px 14px;background:#1c2030;border:1px solid #60a5fa;border-radius:10px;font-family:'DM Mono',monospace;font-size:12px;color:#60a5fa;word-break:break-all;"></div>
-  <div id="debug-ping" style="display:none;width:100%;padding:10px 14px;background:#1c2030;border:1px solid #a78bfa;border-radius:10px;font-family:'DM Mono',monospace;font-size:12px;color:#a78bfa;word-break:break-all;"></div>
-  <button id="btn-ping" style="display:none;width:100%;padding:12px;background:transparent;border:1px solid #a78bfa;border-radius:10px;color:#a78bfa;font-family:'DM Mono',monospace;font-size:13px;cursor:pointer;">🛰️ 測試 GAS 是否收到 LINE ID</button>
 
   <!-- 步驟 1：輸入姓名（LINE 登入後才顯示） -->
   <div id="pick-card" class="card hidden fade-in" style="animation-delay:.15s">
@@ -223,18 +220,6 @@ button { font-family: 'Noto Sans TC', -apple-system, sans-serif; cursor: pointer
     <div id="name-err" class="err-msg hidden"></div>
     <div style="margin-top:14px">
       <button id="confirm-staff" class="btn-primary">確認身份</button>
-    </div>
-  </div>
-
-  <!-- 步驟 2：confirmed who -->
-  <div id="punch-card" class="card hidden fade-in" style="animation-delay:.1s">
-    <div class="confirmed-who">
-      <div class="confirmed-avatar" id="confirmed-avatar">👤</div>
-      <div class="confirmed-info">
-        <div class="confirmed-name" id="who-name">—</div>
-        <div class="confirmed-sub">已驗證身份</div>
-      </div>
-      <div class="change-btn" id="change-staff">換人</div>
     </div>
   </div>
 
@@ -288,7 +273,7 @@ button { font-family: 'Noto Sans TC', -apple-system, sans-serif; cursor: pointer
 
 <script>
 // ================================================================
-const GAS_URL = 'https://script.google.com/macros/s/AKfycby_rn9isZMAPY6SkftwqRceFVUwcY121sdP21MAPaKpcm4ebD3f1cGCrtoRAMfeAuh4-Q/exec';
+const GAS_URL = 'https://script.google.com/macros/s/AKfycbzw9qjSYgQeJdlSMHryRkMVSixXYWucFMWWPF4N4acwOZTxTvmAcN1EZDuriSOLMTs5aA/exec';
 const LIFF_ID = '2010297513-8W4WWzSx';
 const LS_KEY  = 'chekcin_staff';
 const MAX_ACCURACY = 100;
@@ -297,7 +282,6 @@ const MAX_ACCURACY = 100;
 const $ = id => document.getElementById(id);
 let staff = null;
 let lineUserId = null;   // 純紀錄用，不做驗證
-let lineAvatar = null;
 
 // ── Clock ──
 (function tick() {
@@ -332,25 +316,12 @@ async function init() {
     try {
       const profile = await liff.getProfile();
       lineUserId = profile.userId;
-      lineAvatar = profile.pictureUrl || null;
-      // 顯示 LINE 個人資料卡
       $('line-name').textContent = profile.displayName;
-      const uid = profile.userId || '';
-      $('line-uid').textContent = 'UID: ' + uid;
-      // Debug: 顯示完整 lineUserId
-      $('debug-lineid').textContent = '✅ lineUserId 已取得：' + uid;
-      $('debug-lineid').style.display = 'block';
-      $('btn-ping').style.display = 'block';
-      if (lineAvatar) $('line-avatar').innerHTML = `<img src="${lineAvatar}" alt="">`;
-      $('line-profile-card').classList.remove('hidden');
-    } catch(e) {
-      $('debug-lineid').textContent = '❌ liff.getProfile() 失敗：' + e.message;
-      $('debug-lineid').style.display = 'block';
-    }
-  } catch(e) {
+      $('line-uid').textContent = profile.userId || '';
+      $('identity-card').classList.remove('hidden');
+    } catch(_) {}
+  } catch(_) {
     // LIFF 不可用，直接進原本流程
-    $('debug-lineid').textContent = '❌ liff.init() 失敗：' + e.message;
-    $('debug-lineid').style.display = 'block';
   }
 
   $('splash').classList.add('hidden');
@@ -369,7 +340,7 @@ async function init() {
 // ── 原本流程 ──
 function showPickerUI() {
   $('pick-card').classList.remove('hidden');
-  $('punch-card').classList.add('hidden');
+  $('confirmed-section').classList.add('hidden');
   $('gps-card').classList.add('hidden');
   $('action-card').classList.add('hidden');
   $('history-card').classList.add('hidden');
@@ -381,13 +352,12 @@ function showPickerUI() {
 
 function showPunchUI() {
   $('pick-card').classList.add('hidden');
-  $('punch-card').classList.remove('hidden');
+  $('who-name').textContent = staff.name;
+  $('confirmed-section').classList.remove('hidden');
+  $('confirmed-section').style.display = 'flex';
   $('gps-card').classList.remove('hidden');
   $('action-card').classList.remove('hidden');
   $('history-card').classList.remove('hidden');
-  $('who-name').textContent = staff.name;
-  // LINE 頭像也放到 confirmed avatar
-  if (lineAvatar) $('confirmed-avatar').innerHTML = `<img src="${lineAvatar}" alt="">`;
   $('btn-in').disabled = true;
   $('btn-out').disabled = true;
   prefetchPosition();
@@ -507,9 +477,6 @@ async function punch(type) {
   try {
     const params = { staffName: staff.name, pin, type, lat, lng, accuracy };
     if (lineUserId) params.lineUserId = lineUserId;  // 附帶 LINE ID 做紀錄
-    // Debug: 顯示送出的 params
-    $('debug-params').textContent = '📤 送出：lineUserId=' + (params.lineUserId || '（未帶）');
-    $('debug-params').style.display = 'block';
     const data = await gasCall('submitPunch', params);
     $(spinId).classList.add('hidden');
     handlePunchResult(data);
@@ -582,16 +549,6 @@ function escapeHtml(s){return String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;',
 
 $('btn-in').addEventListener('click', ()=>punch('in'));
 $('btn-out').addEventListener('click', ()=>punch('out'));
-$('btn-ping').addEventListener('click', async () => {
-  $('debug-ping').textContent = '🛰️ 測試中...';
-  $('debug-ping').style.display = 'block';
-  try {
-    const result = await gasCall('ping', { lineUserId: lineUserId || '', test: 'hello' });
-    $('debug-ping').textContent = '📩 GAS 收到：' + JSON.stringify(result.received);
-  } catch(e) {
-    $('debug-ping').textContent = '❌ ping 失敗：' + e.message;
-  }
-});
 $('loc-retry').addEventListener('click', ()=>{ $('loc-modal').classList.add('hidden'); prefetchPosition(); });
 
 init();
