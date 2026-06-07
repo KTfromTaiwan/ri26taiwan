@@ -263,6 +263,17 @@ button { font-family: 'Noto Sans TC', -apple-system, sans-serif; cursor: pointer
 
 </div>
 
+<!-- 換人確認 Modal -->
+<div id="confirm-modal" class="modal hidden">
+  <div class="modal-inner" style="text-align:center;padding:28px 24px;">
+    <div id="confirm-msg" style="font-size:16px;line-height:1.6;margin-bottom:24px;"></div>
+    <div style="display:flex;gap:12px;">
+      <button id="confirm-cancel" style="flex:1;padding:13px;background:transparent;border:1px solid var(--border);border-radius:var(--radius);color:var(--muted);font-size:15px;font-family:inherit;cursor:pointer;">取消</button>
+      <button id="confirm-ok" style="flex:1;padding:13px;background:var(--accent);border:none;border-radius:var(--radius);color:#0d0f14;font-size:15px;font-weight:700;font-family:inherit;cursor:pointer;">確定</button>
+    </div>
+  </div>
+</div>
+
 <!-- 位置拒絕 Modal -->
 <div id="loc-modal" class="modal hidden">
   <div class="modal-inner">
@@ -278,7 +289,7 @@ button { font-family: 'Noto Sans TC', -apple-system, sans-serif; cursor: pointer
 
 <script>
 // ================================================================
-const GAS_URL = 'https://script.google.com/macros/s/AKfycbwSTx_Y0GlS2vhWekrseJreYnNFObN_A8gh8atQwm8aD24BKb5Fo2V0iPNHKPcGo6jlsw/exec';
+const GAS_URL = 'https://script.google.com/macros/s/AKfycbzdJ_XW51f7LmRsgX6T6yVIm29JaEU1e-1Y4F7X7RQ1kTc0iLuocJeU2YUiT7wFI15D3Q/exec';
 const LIFF_ID = '2010297513-8W4WWzSx';
 const LS_KEY  = 'chekcin_staff';
 const MAX_ACCURACY = 100;
@@ -411,8 +422,9 @@ function showNameError(msg) {
 $('btn-line-login').addEventListener('click', () => liff.login());
 $('confirm-staff').addEventListener('click', confirmStaff);
 $('staff-input').addEventListener('keydown', e => { if (e.key === 'Enter') confirmStaff(); });
-$('change-staff').addEventListener('click', () => {
-  if (!confirm((staff ? staff.name + '，' : '') + '你需要重新輸入姓名嗎？')) return;
+$('change-staff').addEventListener('click', async () => {
+  const ok = await customConfirm((staff ? staff.name + '，' : '') + '你需要重新輸入姓名嗎？');
+  if (!ok) return;
   localStorage.removeItem(LS_KEY);
   staff = null;
   showPickerUI();
@@ -511,6 +523,7 @@ function handlePunchResult(data) {
       case 'pin_required':       msg='請輸入手機末四碼'; break;
       case 'pin_mismatch':       msg='手機末四碼錯誤，請確認後重試'; $('pin-input').value=''; $('pin-input').focus(); break;
       case 'pin_not_configured': msg='管理員尚未設定你的手機號碼，請聯絡管理員'; break;
+      case 'out_too_early':      msg=data.message||'尚未到下班時間，請稍後再打卡'; break;
       case 'no_schedule':        msg=data.message||'你今日未排班，無法打卡'; break;
       case 'wrong_location':     msg=`不在預定場地範圍：「${escapeHtml(data.scheduled_venue)}」\n距離 ${data.distance_m}m`; break;
       case 'unknown_venue':      msg=`班表場地「${escapeHtml(data.venue||'')}」不在場地對照表，請聯絡管理員`; break;
@@ -559,6 +572,25 @@ function escapeHtml(s){return String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;',
     this.appendChild(ripple);setTimeout(()=>ripple.parentNode&&ripple.parentNode.removeChild(ripple),600);
   });
 });
+
+function customConfirm(msg) {
+  return new Promise(resolve => {
+    $('confirm-msg').textContent = msg;
+    $('confirm-modal').classList.remove('hidden');
+    const ok = $('confirm-ok');
+    const cancel = $('confirm-cancel');
+    function cleanup(val) {
+      $('confirm-modal').classList.add('hidden');
+      ok.removeEventListener('click', onOk);
+      cancel.removeEventListener('click', onCancel);
+      resolve(val);
+    }
+    function onOk()     { cleanup(true);  }
+    function onCancel() { cleanup(false); }
+    ok.addEventListener('click', onOk);
+    cancel.addEventListener('click', onCancel);
+  });
+}
 
 $('btn-in').addEventListener('click', ()=>punch('in'));
 $('btn-out').addEventListener('click', ()=>punch('out'));
