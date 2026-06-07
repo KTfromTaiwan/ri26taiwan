@@ -211,6 +211,8 @@ button { font-family: 'Noto Sans TC', -apple-system, sans-serif; cursor: pointer
   <!-- Debug 區塊（測試完可刪） -->
   <div id="debug-lineid" style="display:none;width:100%;padding:10px 14px;background:#1c2030;border:1px solid #f59e0b;border-radius:10px;font-family:'DM Mono',monospace;font-size:12px;color:#f59e0b;word-break:break-all;"></div>
   <div id="debug-params" style="display:none;width:100%;padding:10px 14px;background:#1c2030;border:1px solid #60a5fa;border-radius:10px;font-family:'DM Mono',monospace;font-size:12px;color:#60a5fa;word-break:break-all;"></div>
+  <div id="debug-ping" style="display:none;width:100%;padding:10px 14px;background:#1c2030;border:1px solid #a78bfa;border-radius:10px;font-family:'DM Mono',monospace;font-size:12px;color:#a78bfa;word-break:break-all;"></div>
+  <button id="btn-ping" style="display:none;width:100%;padding:12px;background:transparent;border:1px solid #a78bfa;border-radius:10px;color:#a78bfa;font-family:'DM Mono',monospace;font-size:13px;cursor:pointer;">🛰️ 測試 GAS 是否收到 LINE ID</button>
 
   <!-- 步驟 1：輸入姓名（LINE 登入後才顯示） -->
   <div id="pick-card" class="card hidden fade-in" style="animation-delay:.15s">
@@ -338,6 +340,7 @@ async function init() {
       // Debug: 顯示完整 lineUserId
       $('debug-lineid').textContent = '✅ lineUserId 已取得：' + uid;
       $('debug-lineid').style.display = 'block';
+      $('btn-ping').style.display = 'block';
       if (lineAvatar) $('line-avatar').innerHTML = `<img src="${lineAvatar}" alt="">`;
       $('line-profile-card').classList.remove('hidden');
     } catch(e) {
@@ -571,6 +574,16 @@ function escapeHtml(s){return String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;',
 
 $('btn-in').addEventListener('click', ()=>punch('in'));
 $('btn-out').addEventListener('click', ()=>punch('out'));
+$('btn-ping').addEventListener('click', async () => {
+  $('debug-ping').textContent = '🛰️ 測試中...';
+  $('debug-ping').style.display = 'block';
+  try {
+    const result = await gasCall('ping', { lineUserId: lineUserId || '', test: 'hello' });
+    $('debug-ping').textContent = '📩 GAS 收到：' + JSON.stringify(result.received);
+  } catch(e) {
+    $('debug-ping').textContent = '❌ ping 失敗：' + e.message;
+  }
+});
 $('loc-retry').addEventListener('click', ()=>{ $('loc-modal').classList.add('hidden'); prefetchPosition(); });
 
 init();
