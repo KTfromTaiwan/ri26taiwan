@@ -288,7 +288,7 @@ button { font-family: 'Noto Sans TC', -apple-system, sans-serif; cursor: pointer
 
 <script>
 // ================================================================
-const GAS_URL = 'https://script.google.com/macros/s/AKfycbwg44pKCN1JkPKtjFic2agdn_zp7z3ZiFUSW2S6k-gA9vSxgEItSMihCjnYJNa3zJLTWg/exec';
+const GAS_URL = 'https://script.google.com/macros/s/AKfycbyOQHILrlWN12-axFFcuJf3SYhYW5XMLwseKHiU0cyGM1lKkWJDoqZV0Jgms5fkmIMZTw/exec';
 const LIFF_ID = '2010297513-8W4WWzSx';
 const LS_KEY  = 'chekcin_staff';
 const MAX_ACCURACY = 100;
@@ -399,8 +399,16 @@ async function confirmStaff() {
   $('confirm-staff').disabled = true;
   $('confirm-staff').textContent = '查詢中...';
   try {
-    const result = await gasCall('lookupStaff', { name });
+    const params = { name };
+    if (lineUserId) params.lineUserId = lineUserId;
+    const result = await gasCall('lookupStaff', params);
     if (!result) { showNameError('查無此人，請確認姓名或聯絡管理員'); return; }
+    if (result.line_id_mismatch) {
+      showNameError('此姓名已綁定其他 LINE 帳號，請確認是否輸入正確姓名');
+      $('staff-input').value = '';
+      $('staff-input').focus();
+      return;
+    }
     staff = { id: result.id, name: result.name };
     localStorage.setItem(LS_KEY, JSON.stringify(staff));
     showPunchUI();
