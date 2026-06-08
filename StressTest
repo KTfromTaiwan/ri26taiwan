@@ -1,0 +1,419 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Chekcin 壓力測試</title>
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: -apple-system, 'Noto Sans TC', sans-serif; background: #0d0f14; color: #e8eaf2; padding: 24px; }
+h1 { font-size: 20px; font-weight: 700; margin-bottom: 4px; }
+.sub { font-size: 13px; color: #6b7280; margin-bottom: 24px; }
+.section { background: #1c2030; border: 1px solid #2a2f42; border-radius: 12px; padding: 20px; margin-bottom: 16px; }
+.section h2 { font-size: 12px; letter-spacing: .12em; color: #6b7280; text-transform: uppercase; margin-bottom: 14px; }
+label { display: block; font-size: 12px; color: #9ca3af; margin-bottom: 6px; }
+input, textarea, select {
+  width: 100%; padding: 10px 12px; font-size: 14px;
+  background: #151820; border: 1px solid #2a2f42; border-radius: 8px;
+  color: #e8eaf2; outline: none; font-family: inherit;
+}
+textarea { resize: vertical; font-family: 'Courier New', monospace; font-size: 13px; }
+input:focus, textarea:focus, select:focus { border-color: #4ade80; }
+.row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 12px; }
+.row3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px; margin-bottom: 12px; }
+.btn {
+  padding: 12px 24px; font-size: 15px; font-weight: 700; border: none;
+  border-radius: 10px; cursor: pointer; font-family: inherit; transition: opacity .15s;
+}
+.btn-primary { background: #4ade80; color: #0d0f14; width: 100%; margin-top: 4px; }
+.btn-primary:hover { opacity: .9; }
+.btn-primary:disabled { background: #2a2f42; color: #6b7280; cursor: not-allowed; }
+.btn-clear { background: transparent; border: 1px solid #2a2f42; color: #9ca3af; font-size: 13px; padding: 6px 14px; border-radius: 8px; cursor: pointer; }
+
+/* Stats bar */
+.stats { display: grid; grid-template-columns: repeat(6, 1fr); gap: 8px; margin-bottom: 16px; }
+.stat { background: #1c2030; border: 1px solid #2a2f42; border-radius: 10px; padding: 12px; text-align: center; }
+.stat-num { font-size: 24px; font-weight: 700; font-family: 'Courier New', monospace; }
+.stat-lbl { font-size: 11px; color: #6b7280; margin-top: 2px; }
+.c-total  { color: #e8eaf2; }
+.c-ok     { color: #4ade80; }
+.c-retry  { color: #f59e0b; }
+.c-fail   { color: #f87171; }
+.c-reject { color: #9ca3af; }
+.c-fly    { color: #60a5fa; }
+
+/* Results table */
+.results { width: 100%; border-collapse: collapse; font-size: 13px; }
+.results th { text-align: left; padding: 8px 10px; color: #6b7280; border-bottom: 1px solid #2a2f42; font-weight: 400; font-size: 11px; letter-spacing: .08em; }
+.results td { padding: 8px 10px; border-bottom: 1px solid #1a1e2a; vertical-align: top; }
+.results tr:last-child td { border-bottom: none; }
+.pill { display: inline-block; font-size: 11px; padding: 2px 8px; border-radius: 20px; font-family: 'Courier New', monospace; }
+.p-pending { background: #1e2535; color: #6b7280; border: 1px solid #2a2f42; }
+.p-fly     { background: rgba(96,165,250,.12); color: #60a5fa; border: 1px solid rgba(96,165,250,.3); }
+.p-ok      { background: rgba(74,222,128,.1); color: #4ade80; border: 1px solid rgba(74,222,128,.3); }
+.p-retry   { background: rgba(245,158,11,.1); color: #f59e0b; border: 1px solid rgba(245,158,11,.3); }
+.p-fail    { background: rgba(248,113,113,.1); color: #f87171; border: 1px solid rgba(248,113,113,.3); }
+.p-reject  { background: rgba(107,114,128,.12); color: #9ca3af; border: 1px solid #2a2f42; }
+.p-busyok  { background: rgba(74,222,128,.08); color: #86efac; border: 1px solid rgba(74,222,128,.25); }
+.note { font-size: 11px; color: #6b7280; margin-top: 2px; }
+.timing { font-family: 'Courier New', monospace; color: #9ca3af; }
+
+.hint { font-size: 12px; color: #6b7280; margin-top: 8px; line-height: 1.5; }
+.warn { color: #f59e0b; }
+</style>
+</head>
+<body>
+
+<h1>Chekcin 壓力測試</h1>
+<p class="sub">同時送出大量打卡請求，測試 LockService 與 retry 機制</p>
+
+<div class="section">
+  <h2>設定</h2>
+  <div class="row">
+    <div>
+      <label>GAS URL</label>
+      <input id="gasUrl" value="https://script.google.com/macros/s/AKfycbzdJ_XW51f7LmRsgX6T6yVIm29JaEU1e-1Y4F7X7RQ1kTc0iLuocJeU2YUiT7wFI15D3Q/exec">
+    </div>
+    <div>
+      <label>打卡類型</label>
+      <select id="punchType">
+        <option value="in">上班 (in)</option>
+        <option value="out">下班 (out)</option>
+      </select>
+    </div>
+  </div>
+  <div class="row3">
+    <div>
+      <label>緯度 (lat)</label>
+      <input id="lat" value="25.055653" type="number" step="any">
+    </div>
+    <div>
+      <label>經度 (lng)</label>
+      <input id="lng" value="121.617203" type="number" step="any">
+    </div>
+    <div>
+      <label>GPS 精度 (m)</label>
+      <input id="acc" value="20" type="number">
+    </div>
+  </div>
+  <div style="margin-bottom:12px">
+    <label>人員清單（每行一筆，格式：姓名,手機末四碼）</label>
+    <textarea id="staffList" rows="8">石國豪,1409
+郭柏翰,2679
+薛明哲,7912
+黃宗翰,4811
+陳庭萱,4257
+薛佳穎,4611
+廖志豪,3615
+葉冠霖,3547
+葉宇軒,2519
+蘇昊天,5333
+方欣怡,3045
+盧品睿,6925
+彭俊傑,1750
+韓品睿,2307
+吳立凱,5554
+莊子軒,7065
+魏冠霖,2169
+許欣怡,5010
+江冠霖,4598
+韓怡如,1916
+林士賢,7572
+洪雅琪,6155
+簡美麗,8517
+蔡浩然,9830
+翁雅婷,7543
+蔡依婷,9085
+張國豪,3504
+宋雅婷,2040
+鍾玉珍,9669
+王品萱,2876
+胡冠霖,6573
+蕭子軒,8433
+孫昱廷,9201
+吳靜雯,5889
+鍾品翰,3504
+韓芳瑜,1009
+簡建宏,2832
+徐浩然,1949
+范明哲,2403
+李欣穎,9727
+魏淑惠,3705
+鍾雅婷,4470
+孫雅文,4295
+魏怡萱,7118
+游國豪,5061
+葉建宏,4770
+王俊傑,1964
+林啟航,2160
+廖語彤,8953
+蔡淑芬,8744
+馬佳穎,4119
+魏雅婷,6804
+方淑芬,1887
+馮宇軒,1993
+邱品翰,4116
+蔡雅婷,4006
+邱俊傑,8260
+張怡萱,9856
+胡浩然,3724
+馬宗翰,7570
+江志豪,7396
+方品睿,7930
+盧語彤,8973
+賴宗翰,1958
+薛承恩,6138
+翁淑惠,9238
+張依婷,2312
+鍾俊傑,4853
+范浩然,1651
+何語彤,9565
+洪語彤,6147
+呂柏翰,5915
+胡俊傑,1152
+范宇軒,2200
+朱昱廷,3170
+邱偉誠,5669
+薛慧君,5956
+馮芳瑜,1128
+盧奕翔,2697
+劉宇軒,3546
+鍾宗翰,6617
+石昱廷,9280
+張明哲,7939
+王啟航,3143
+許美玲,8239
+蕭庭萱,1158
+唐彥廷,9938
+莊思穎,3426
+林奕翔,6974
+洪品萱,5088
+蘇怡如,7658
+楊浩然,3662
+陳家豪,6442
+魏美玲,5065
+唐宇軒,7267
+馬嘉豪,4269
+徐嘉豪,4652
+謝美麗,6378
+李怡如,5573
+朱美麗,9785</textarea>
+    <p class="hint">⚠️ 請使用工讀生清單中的真實姓名與手機末四碼。測試會真實寫入打卡紀錄，建議測試完後手動清除紀錄。</p>
+  </div>
+  <div style="margin-bottom:12px">
+    <label>最大重試次數</label>
+    <select id="maxRetry">
+      <option value="1">1（不重試）</option>
+      <option value="3" selected>3（預設，與正式網頁相同）</option>
+      <option value="5">5</option>
+    </select>
+  </div>
+  <button class="btn btn-primary" id="btnFire" onclick="runTest()">🚀 同時送出所有請求</button>
+</div>
+
+<!-- Stats -->
+<div class="stats">
+  <div class="stat"><div class="stat-num c-total" id="s-total">0</div><div class="stat-lbl">總計</div></div>
+  <div class="stat"><div class="stat-num c-fly"   id="s-fly">0</div><div class="stat-lbl">進行中</div></div>
+  <div class="stat"><div class="stat-num c-ok"    id="s-ok">0</div><div class="stat-lbl">成功</div></div>
+  <div class="stat"><div class="stat-num c-retry" id="s-retry">0</div><div class="stat-lbl">曾重試</div></div>
+  <div class="stat"><div class="stat-num c-reject" id="s-reject">0</div><div class="stat-lbl">業務拒絕</div></div>
+  <div class="stat"><div class="stat-num c-fail"  id="s-fail">0</div><div class="stat-lbl">系統失敗</div></div>
+</div>
+
+<div class="section">
+  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
+    <h2 style="margin:0">結果</h2>
+    <button class="btn-clear" onclick="clearResults()">清除</button>
+  </div>
+  <div style="overflow-x:auto;">
+    <table class="results">
+      <thead>
+        <tr>
+          <th>#</th>
+          <th>姓名</th>
+          <th>狀態</th>
+          <th>重試</th>
+          <th>耗時</th>
+          <th>說明</th>
+        </tr>
+      </thead>
+      <tbody id="tbody"></tbody>
+    </table>
+  </div>
+</div>
+
+<script>
+const $ = id => document.getElementById(id);
+let rows = [];
+let running = false;
+
+function parseStaff() {
+  return $('staffList').value.trim().split('\n')
+    .map(l => l.trim()).filter(Boolean)
+    .map((l, i) => {
+      const parts = l.split(',');
+      return { idx: i + 1, name: (parts[0] || '').trim(), pin: (parts[1] || '').trim() };
+    })
+    .filter(s => s.name && s.pin);
+}
+
+function statusPill(state) {
+  const map = {
+    pending: ['p-pending', '待送出'],
+    fly:     ['p-fly',   '進行中'],
+    ok:      ['p-ok',    '成功'],
+    busyok:  ['p-busyok','重試後成功'],
+    retry:   ['p-retry', '重試中'],
+    reject:  ['p-reject', '業務拒絕'],
+    fail:    ['p-fail',  '系統失敗'],
+  };
+  const [cls, label] = map[state] || ['p-pending', state];
+  return `<span class="pill ${cls}">${label}</span>`;
+}
+
+const REJECT_REASONS = new Set(['no_schedule','wrong_location','pin_mismatch','pin_not_configured','in_too_early','in_too_late','out_too_early','out_too_late','out_before_start','unknown_venue','low_accuracy','staff_not_found','line_id_mismatch']);
+
+function updateStats() {
+  const fly    = rows.filter(r => r.state === 'fly' || r.state === 'retry').length;
+  const ok     = rows.filter(r => r.state === 'ok' || r.state === 'busyok').length;
+  const retried = rows.filter(r => r.retries > 0).length;
+  const reject = rows.filter(r => r.state === 'reject').length;
+  const fail   = rows.filter(r => r.state === 'fail').length;
+  $('s-total').textContent  = rows.length;
+  $('s-fly').textContent    = fly;
+  $('s-ok').textContent     = ok;
+  $('s-retry').textContent  = retried;
+  $('s-reject').textContent = reject;
+  $('s-fail').textContent   = fail;
+}
+
+function renderRow(r) {
+  const tr = document.getElementById('row-' + r.idx);
+  const elapsed = r.endMs ? ((r.endMs - r.startMs) / 1000).toFixed(2) + 's' : (r.startMs ? ((Date.now() - r.startMs) / 1000).toFixed(1) + 's...' : '—');
+  const noteHtml = r.note ? `<div class="note">${r.note}</div>` : '';
+  tr.innerHTML = `
+    <td>${r.idx}</td>
+    <td>${r.name}</td>
+    <td>${statusPill(r.state)}</td>
+    <td class="timing">${r.retries > 0 ? r.retries + '次' : '—'}</td>
+    <td class="timing">${elapsed}</td>
+    <td>${noteHtml}</td>`;
+}
+
+async function gasCall(gasUrl, action, params) {
+  const qs = new URLSearchParams({ action });
+  Object.entries(params).forEach(([k, v]) => qs.set(k, String(v)));
+  const res = await fetch(gasUrl + '?' + qs.toString(), { redirect: 'follow' });
+  if (!res.ok) throw new Error('HTTP ' + res.status);
+  const json = await res.json();
+  if (json.error) throw new Error(json.error);
+  return json.result;
+}
+
+async function sendOne(r, gasUrl, type, lat, lng, accuracy, maxRetry) {
+  r.state = 'fly';
+  r.startMs = Date.now();
+  renderRow(r);
+  updateStats();
+
+  const params = { staffName: r.name, pin: r.pin, type, lat, lng, accuracy };
+
+  for (let i = 0; i < maxRetry; i++) {
+    if (i > 0) {
+      r.state = 'retry';
+      const wait = 1000 + Math.floor(Math.random() * 4000); // 1~5 秒，與正式網頁相同
+      r.note = `等待 ${(wait/1000).toFixed(1)}s 後第 ${i+1} 次重試...`;
+      renderRow(r);
+      await new Promise(res => setTimeout(res, wait));
+    }
+    try {
+      const data = await gasCall(gasUrl, 'submitPunch', params);
+      if (data && data.reason === 'server_busy' && i < maxRetry - 1) {
+        r.retries++;
+        continue;
+      }
+      r.endMs = Date.now();
+      if (data && data.ok) {
+        r.state = r.retries > 0 ? 'busyok' : 'ok';
+        r.note = `${data.scheduled_venue || ''} · ${data.verdict || ''}`;
+      } else if (data && data.reason === 'server_busy') {
+        r.state = 'fail';
+        r.note = '伺服器忙碌，retry 用完';
+      } else if (data && !data.ok && REJECT_REASONS.has(data.reason)) {
+        r.state = 'reject';
+        r.note = data.message || data.reason;
+      } else {
+        r.state = 'fail';
+        r.note = data ? (data.message || data.reason || JSON.stringify(data)) : '無回應';
+      }
+      renderRow(r);
+      updateStats();
+      return;
+    } catch(e) {
+      const retryable = i < maxRetry - 1 && e.message &&
+        (e.message.includes('HTTP 5') || e.message.toLowerCase().includes('lock') || e.message.includes('503'));
+      if (!retryable) {
+        r.endMs = Date.now();
+        r.state = 'fail';
+        r.note = e.message || String(e);
+        renderRow(r);
+        updateStats();
+        return;
+      }
+      r.retries++;
+    }
+  }
+  r.endMs = Date.now();
+  r.state = 'fail';
+  r.note = 'Retry 用完';
+  renderRow(r);
+  updateStats();
+}
+
+async function runTest() {
+  if (running) return;
+  const staff = parseStaff();
+  if (!staff.length) { alert('請輸入至少一筆人員資料'); return; }
+
+  running = true;
+  $('btnFire').disabled = true;
+  $('btnFire').textContent = '測試中...';
+
+  const gasUrl   = $('gasUrl').value.trim();
+  const type     = $('punchType').value;
+  const lat      = parseFloat($('lat').value);
+  const lng      = parseFloat($('lng').value);
+  const accuracy = parseFloat($('acc').value);
+  const maxRetry = parseInt($('maxRetry').value);
+
+
+  rows = staff.map(s => ({ ...s, state: 'pending', retries: 0, startMs: null, endMs: null, note: '' }));
+
+  // Render skeleton
+  const tbody = $('tbody');
+  tbody.innerHTML = '';
+  rows.forEach(r => {
+    const tr = document.createElement('tr');
+    tr.id = 'row-' + r.idx;
+    tbody.appendChild(tr);
+    renderRow(r);
+  });
+  updateStats();
+
+  // Fire all simultaneously
+  await Promise.all(rows.map(r => sendOne(r, gasUrl, type, lat, lng, accuracy, maxRetry)));
+
+  running = false;
+  $('btnFire').disabled = false;
+  $('btnFire').textContent = '🚀 同時送出所有請求';
+}
+
+function clearResults() {
+  $('tbody').innerHTML = '';
+  rows = [];
+  updateStats();
+}
+</script>
+</body>
+</html>
