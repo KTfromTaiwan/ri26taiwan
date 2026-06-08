@@ -289,7 +289,7 @@ button { font-family: 'Noto Sans TC', -apple-system, sans-serif; cursor: pointer
 
 <script>
 // ================================================================
-const GAS_URL = 'https://script.google.com/macros/s/AKfycbzdJ_XW51f7LmRsgX6T6yVIm29JaEU1e-1Y4F7X7RQ1kTc0iLuocJeU2YUiT7wFI15D3Q/exec';
+const GAS_URL = 'https://script.google.com/macros/s/AKfycbzszcxNXep3hNW04MIsDZ21FT6O2LcCWJ9qLPh6HOqRtP0cbe0hUIA3AeEsvXdUE4c6nA/exec';
 const LIFF_ID = '2010297513-8W4WWzSx';
 const LS_KEY  = 'chekcin_staff';
 const MAX_ACCURACY = 100;
@@ -394,16 +394,8 @@ async function confirmStaff() {
   $('confirm-staff').disabled = true;
   $('confirm-staff').textContent = '查詢中...';
   try {
-    const params = { name };
-    if (lineUserId) params.lineUserId = lineUserId;
-    const result = await gasCall('lookupStaff', params);
+    const result = await gasCall('lookupStaff', { name });
     if (!result) { showNameError('查無此人，請確認姓名或聯絡管理員'); return; }
-    if (result.line_id_mismatch) {
-      showNameError('此姓名已綁定其他 LINE 帳號，請確認是否輸入正確姓名');
-      $('staff-input').value = '';
-      $('staff-input').focus();
-      return;
-    }
     staff = { id: result.id, name: result.name };
     localStorage.setItem(LS_KEY, JSON.stringify(staff));
     showPunchUI();
@@ -496,16 +488,44 @@ async function punch(type) {
   $(spinId).classList.remove('hidden');
   showStatus('🛰️ 比對站點中...', 'info');
   const { latitude:lat, longitude:lng, accuracy } = cachedPosition.coords;
-  try {
-    const params = { staffName: staff.name, pin, type, lat, lng, accuracy };
-    if (lineUserId) params.lineUserId = lineUserId;
-    const data = await gasCall('submitPunch', params);
-    $(spinId).classList.add('hidden');
-    handlePunchResult(data);
-  } catch(e) {
-    $(spinId).classList.add('hidden'); $('btn-in').disabled=false; $('btn-out').disabled=false;
-    showStatus('❌ 系統錯誤：'+escapeHtml(e.message||String(e)),'err');
+  const params = { staffName: staff.name, pin, type, lat, lng, accuracy };
+  if (lineUserId) params.lineUserId = lineUserId;
+
+  const MAX_RETRY = 3;
+  for (let i = 0; i < MAX_RETRY; i++) {
+    if (i > 0) {
+      const wait = 1000 + Math.floor(Math.random() * 4000); // 1~5 秒隨機
+      showStatus(`🔄 重新嘗試中... (${i + 1}/${MAX_RETRY})`, 'info');
+      await new Promise(r => setTimeout(r, wait));
+    }
+    try {
+      const data = await gasCall('submitPunch', params);
+      // server_busy → 繼續 retry（還有機會的話）
+      if (data && data.reason === 'server_busy' && i < MAX_RETRY - 1) continue;
+      $(spinId).classList.add('hidden');
+      if (data && data.reason === 'server_busy') {
+        $('btn-in').disabled = false; $('btn-out').disabled = false;
+        showStatus('❌ 伺服器忙碌，請稍後再試', 'err');
+      } else {
+        handlePunchResult(data);
+      }
+      return;
+    } catch(e) {
+      // HTTP 5xx / lock error → retryable；其他錯誤直接顯示
+      const retryable = i < MAX_RETRY - 1 && e.message &&
+        (e.message.includes('HTTP 5') || e.message.toLowerCase().includes('lock') || e.message.includes('503'));
+      if (!retryable) {
+        $(spinId).classList.add('hidden');
+        $('btn-in').disabled = false; $('btn-out').disabled = false;
+        showStatus('❌ 系統錯誤：' + escapeHtml(e.message || String(e)), 'err');
+        return;
+      }
+    }
   }
+  // 所有 retry 用完（理論上不會到這）
+  $(spinId).classList.add('hidden');
+  $('btn-in').disabled = false; $('btn-out').disabled = false;
+  showStatus('❌ 伺服器忙碌，請稍後再試', 'err');
 }
 
 function handlePunchResult(data) {
@@ -521,6 +541,7 @@ function handlePunchResult(data) {
       case 'pin_mismatch':       msg='手機末四碼錯誤，請確認後重試'; $('pin-input').value=''; $('pin-input').focus(); break;
       case 'pin_not_configured': msg='管理員尚未設定你的手機號碼，請聯絡管理員'; break;
       case 'out_too_early':      msg=data.message||'尚未到下班時間，請稍後再打卡'; break;
+      case 'line_id_mismatch':   msg='此帳號綁定的 LINE 與記錄不符，請聯絡管理員'; break;
       case 'no_schedule':        msg=data.message||'你今日未排班，無法打卡'; break;
       case 'wrong_location':     msg=`不在預定場地範圍：「${escapeHtml(data.scheduled_venue)}」\n距離 ${data.distance_m}m`; break;
       case 'unknown_venue':      msg=`班表場地「${escapeHtml(data.venue||'')}」不在場地對照表，請聯絡管理員`; break;
