@@ -60,6 +60,7 @@ input:focus, textarea:focus, select:focus { border-color: #4ade80; }
 
 .hint { font-size: 12px; color: #6b7280; margin-top: 8px; line-height: 1.5; }
 .warn { color: #f59e0b; }
+.hidden { display: none; }
 </style>
 </head>
 <body>
@@ -243,6 +244,8 @@ input:focus, textarea:focus, select:focus { border-color: #4ade80; }
   </div>
 </div>
 
+<div id="summary-box" class="section hidden" style="margin-top:16px;"></div>
+
 <script>
 const $ = id => document.getElementById(id);
 let rows = [];
@@ -352,7 +355,9 @@ async function sendOne(r, gasUrl, type, lat, lng, accuracy, maxRetry) {
       return;
     } catch(e) {
       const retryable = i < maxRetry - 1 && e.message &&
-        (e.message.includes('HTTP 5') || e.message.toLowerCase().includes('lock') || e.message.includes('503'));
+        (e.message.includes('HTTP 5') || e.message.toLowerCase().includes('lock') ||
+         e.message.includes('503') || e.message.toLowerCase().includes('failed to fetch') ||
+         e.message.toLowerCase().includes('networkerror'));
       if (!retryable) {
         r.endMs = Date.now();
         r.state = 'fail';
@@ -401,18 +406,87 @@ async function runTest() {
   });
   updateStats();
 
-  // Fire all simultaneously
-  await Promise.all(rows.map(r => sendOne(r, gasUrl, type, lat, lng, accuracy, maxRetry)));
+  // 錯開發送：每筆間隔 staggerMs，避免同時打爆 GAS 並發上限
+  const staggerMs = 200;  // 每人間隔 200ms，100人 = 20秒內全部送出
+  await Promise.all(rows.map((r, idx) =>
+    new Promise(res => setTimeout(res, idx * staggerMs))
+      .then(() => sendOne(r, gasUrl, type, lat, lng, accuracy, maxRetry))
+  ));
 
   running = false;
   $('btnFire').disabled = false;
   $('btnFire').textContent = '🚀 同時送出所有請求';
+  renderSummary();
 }
 
 function clearResults() {
   $('tbody').innerHTML = '';
   rows = [];
   updateStats();
+  $('summary-box').classList.add('hidden');
+}
+
+function renderSummary() {
+  if (!rows.length) return;
+  const done = rows.filter(r => !['fly','retry','pending'].includes(r.state));
+  if (!done.length) return;
+
+  const total    = rows.length;
+  const ok       = rows.filter(r => r.state === 'ok' || r.state === 'busyok').length;
+  const busyok   = rows.filter(r => r.state === 'busyok').length;
+  const retried  = rows.filter(r => r.retries > 0).length;
+  const reject   = rows.filter(r => r.state === 'reject').length;
+  const fail     = rows.filter(r => r.state === 'fail').length;
+  const timings  = rows.filter(r => r.startMs && r.endMs).map(r => r.endMs - r.startMs);
+  const avgMs    = timings.length ? Math.round(timings.reduce((a,b)=>a+b,0)/timings.length) : 0;
+  const maxMs    = timings.length ? Math.max(...timings) : 0;
+  const minMs    = timings.length ? Math.min(...timings) : 0;
+  const successRate = Math.round(ok / total * 100);
+
+  const failReasons = {};
+  rows.filter(r => r.state === 'fail' || r.state === 'reject').forEach(r => {
+    const k = r.note ? r.note.split('，')[0].split('(')[0].trim() : '未知';
+    failReasons[k] = (failReasons[k] || 0) + 1;
+  });
+  const reasonLines = Object.entries(failReasons)
+    .sort((a,b) => b[1]-a[1])
+    .map(([k,v]) => `<div style="display:flex;justify-content:space-between;padding:4px 0;border-bottom:1px solid #1a1e2a;font-size:12px;"><span style="color:#9ca3af;">${k}</span><span style="font-family:'Courier New';color:#e8eaf2;">${v} 筆</span></div>`)
+    .join('');
+
+  $('summary-box').innerHTML = `
+    <h2 style="margin:0 0 16px;">測試結果摘要</h2>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:16px;">
+      <div style="background:#151820;border-radius:10px;padding:14px;">
+        <div style="font-size:11px;color:#6b7280;margin-bottom:8px;letter-spacing:.08em;">成功率</div>
+        <div style="font-size:36px;font-weight:700;font-family:'Courier New';color:${successRate>=90?'#4ade80':successRate>=70?'#f59e0b':'#f87171'};">${successRate}%</div>
+        <div style="font-size:12px;color:#6b7280;margin-top:4px;">${ok} / ${total} 筆成功</div>
+      </div>
+      <div style="background:#151820;border-radius:10px;padding:14px;">
+        <div style="font-size:11px;color:#6b7280;margin-bottom:8px;letter-spacing:.08em;">耗時統計</div>
+        <div style="font-size:13px;font-family:'Courier New';line-height:2;">
+          <span style="color:#6b7280;">平均</span> <span style="color:#e8eaf2;">${(avgMs/1000).toFixed(2)}s</span><br>
+          <span style="color:#6b7280;">最快</span> <span style="color:#4ade80;">${(minMs/1000).toFixed(2)}s</span><br>
+          <span style="color:#6b7280;">最慢</span> <span style="color:#f59e0b;">${(maxMs/1000).toFixed(2)}s</span>
+        </div>
+      </div>
+    </div>
+    <div style="background:#151820;border-radius:10px;padding:14px;margin-bottom:12px;">
+      <div style="font-size:11px;color:#6b7280;margin-bottom:10px;letter-spacing:.08em;">細項</div>
+      <div style="display:flex;flex-direction:column;gap:2px;">
+        <div style="display:flex;justify-content:space-between;padding:4px 0;border-bottom:1px solid #1a1e2a;font-size:13px;"><span style="color:#9ca3af;">首次成功</span><span style="font-family:'Courier New';color:#4ade80;">${ok - busyok} 筆</span></div>
+        <div style="display:flex;justify-content:space-between;padding:4px 0;border-bottom:1px solid #1a1e2a;font-size:13px;"><span style="color:#9ca3af;">重試後成功</span><span style="font-family:'Courier New';color:#86efac;">${busyok} 筆</span></div>
+        <div style="display:flex;justify-content:space-between;padding:4px 0;border-bottom:1px solid #1a1e2a;font-size:13px;"><span style="color:#9ca3af;">曾觸發重試</span><span style="font-family:'Courier New';color:#f59e0b;">${retried} 筆</span></div>
+        <div style="display:flex;justify-content:space-between;padding:4px 0;border-bottom:1px solid #1a1e2a;font-size:13px;"><span style="color:#9ca3af;">業務拒絕</span><span style="font-family:'Courier New';color:#9ca3af;">${reject} 筆</span></div>
+        <div style="display:flex;justify-content:space-between;padding:4px 0;font-size:13px;"><span style="color:#9ca3af;">系統失敗</span><span style="font-family:'Courier New';color:#f87171;">${fail} 筆</span></div>
+      </div>
+    </div>
+    ${failReasons && Object.keys(failReasons).length ? `
+    <div style="background:#151820;border-radius:10px;padding:14px;">
+      <div style="font-size:11px;color:#6b7280;margin-bottom:10px;letter-spacing:.08em;">失敗原因分布</div>
+      ${reasonLines}
+    </div>` : ''}
+  `;
+  $('summary-box').classList.remove('hidden');
 }
 </script>
 </body>
