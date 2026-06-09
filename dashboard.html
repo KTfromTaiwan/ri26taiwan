@@ -96,8 +96,9 @@ body::before {
 .btn-back:active { background: rgba(74,222,128,.2); }
 .detail-date { font-family: 'DM Mono', monospace; font-size: 16px; font-weight: 600; color: var(--text); }
 .detail-dow  { font-size: 12px; color: var(--muted); margin-left: 5px; font-family: 'DM Mono', monospace; }
-.btn-refresh { margin-left: auto; background: none; border: none; color: var(--dim); font-size: 17px; cursor: pointer; transition: color .15s; }
-.btn-refresh:hover { color: var(--accent); }
+.btn-refresh { margin-left: auto; font-family: 'DM Mono', monospace; font-size: 13px; color: var(--accent); background: rgba(74,222,128,.1); border: 1px solid rgba(74,222,128,.25); border-radius: 20px; padding: 5px 10px; cursor: pointer; display: flex; align-items: center; transition: background .15s; }
+.btn-refresh:active { background: rgba(74,222,128,.2); }
+.btn-refresh svg { width: 14px; height: 14px; stroke: var(--accent); fill: none; stroke-width: 2; }
 
 /* ── KPI row ── */
 .kpi-row { display: grid; grid-template-columns: repeat(2,1fr); gap: 8px; margin-bottom: 18px; }
@@ -126,7 +127,10 @@ body::before {
 .pdot.abs  { background: var(--muted); }
 .pdot.pend { background: var(--blue); }
 .pinfo { flex: 1; min-width: 0; }
-.pname { font-size: 13px; font-weight: 700; color: var(--text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.pname-row { display: flex; align-items: center; gap: 7px; }
+.pname { font-size: 13px; font-weight: 700; color: var(--text); white-space: nowrap; }
+.pphone { display: inline-flex; align-items: center; gap: 3px; font-family: 'DM Mono', monospace; font-size: 10px; color: var(--accent); background: rgba(74,222,128,.08); border: 1px solid rgba(74,222,128,.2); border-radius: 20px; padding: 1px 7px; text-decoration: none; flex-shrink: 0; }
+.pphone svg { width: 10px; height: 10px; stroke: var(--accent); fill: none; stroke-width: 2; }
 .pmeta { font-size: 11px; color: var(--muted); margin-top: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .pbadge { font-size: 10px; font-family: 'DM Mono', monospace; padding: 2px 7px; border-radius: 20px; flex-shrink: 0; }
 .pbadge.ok   { background: rgba(74,222,128,.1);  color: var(--accent); }
@@ -176,7 +180,9 @@ body::before {
   <div class="back-bar">
     <button class="btn-back" onclick="showSummary()">← 總表</button>
     <div><span class="detail-date" id="detailDate">—</span><span class="detail-dow" id="detailDow"></span></div>
-    <button class="btn-refresh" onclick="loadDetail(currentDate)" title="重新整理">↺</button>
+    <button class="btn-refresh" onclick="loadDetail(currentDate)" title="重新整理">
+      <svg viewBox="0 0 24 24"><path d="M4 12a8 8 0 0 1 14.93-4M20 12a8 8 0 0 1-14.93 4"/><polyline points="20 4 20 8 16 8"/><polyline points="4 20 4 16 8 16"/></svg>
+    </button>
   </div>
 
   <div class="kpi-row" id="kpiRow" style="display:none">
@@ -195,8 +201,6 @@ body::before {
     </div>
     <div class="tabs">
       <button class="tab active" data-f="alert"   onclick="setFilter('alert')"  >需關注<span class="tc" id="tcA"></span></button>
-      <button class="tab"        data-f="all"     onclick="setFilter('all')"    >全部<span class="tc" id="tcAll"></span></button>
-      <button class="tab"        data-f="present" onclick="setFilter('present')">到班<span class="tc" id="tcOk"></span></button>
       <button class="tab"        data-f="failed"  onclick="setFilter('failed')" >失敗<span class="tc" id="tcFail"></span></button>
       <button class="tab"        data-f="absent"  onclick="setFilter('absent')" >缺席<span class="tc" id="tcAbs"></span></button>
       <button class="tab"        data-f="pending" onclick="setFilter('pending')">待打卡<span class="tc" id="tcPend"></span></button>
@@ -209,7 +213,7 @@ body::before {
 </div>
 
 <script>
-const GAS  = 'https://script.google.com/macros/s/AKfycbxqCaHj7HwKng1uRqwL7RZBNF-dyBldp9Ojmb2Zw7CZAs0ueGdrw6ZsYp7ZuqkIZtgp8w/exec';
+const GAS  = 'https://script.google.com/macros/s/AKfycbxTyCtEDUwLAjUrmwVio1iCmdpMEfyacWwZxzZj4Kwb_C4rJk22ANCc43u-vmzAOMn_YQ/exec';
 const DOW  = ['日','一','二','三','四','五','六'];
 
 let currentDate   = '';
@@ -360,8 +364,6 @@ function renderDetail(data) {
     document.getElementById('secPeople').style.display  = '';
     document.getElementById('searchArea').style.display = '';
     document.getElementById('tcA').textContent    = allStaff.filter(x=>x.status==='absent'||x.status==='failed').length;
-    document.getElementById('tcAll').textContent  = allStaff.length;
-    document.getElementById('tcOk').textContent   = allStaff.filter(x=>x.status==='present').length;
     document.getElementById('tcFail').textContent = allStaff.filter(x=>x.status==='failed').length;
     document.getElementById('tcAbs').textContent  = allStaff.filter(x=>x.status==='absent').length;
     document.getElementById('tcPend').textContent = allStaff.filter(x=>x.status==='pending').length;
@@ -374,12 +376,15 @@ function buildPersonRow(s) {
   const dotCls   = {present:'ok', failed:'fail', absent:'abs', pending:'pend'}[s.status] || 'abs';
   const badgeCls = {present:'ok', failed:'fail', absent:'abs', pending:'pend'}[s.status] || 'abs';
   const label    = {present:'到班', failed:'失敗', absent:'缺席', pending:'未到時間'}[s.status] || '—';
-  const meta     = [s.group, s.venue ? '📍 '+s.venue : '', s.fail_reason ? '⚠ '+s.fail_reason : ''].filter(Boolean).join('・');
-  const timeHtml = s.in_time ? '<div class="ppunch">' + s.in_time + '</div>' : '';
+  const meta      = [s.group, s.venue ? '📍 '+s.venue : '', s.fail_reason ? '⚠ '+s.fail_reason : ''].filter(Boolean).join('・');
+  const timeHtml  = s.in_time ? '<div class="ppunch">' + s.in_time + '</div>' : '';
+  const phoneHtml = s.phone
+    ? `<a class="pphone" href="tel:${s.phone.replace(/\D/g,'')}"><svg viewBox="0 0 24 24"><path d="M22 16.92v3a2 2 0 0 1-2.18 2A19.86 19.86 0 0 1 3.09 5.18 2 2 0 0 1 5.09 3h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L9.09 10.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 22 17z"/></svg>${s.phone}</a>`
+    : '';
   return `<div class="prow">
     <div class="pdot ${dotCls}"></div>
     <div class="pinfo">
-      <div class="pname">${s.name}</div>
+      <div class="pname-row"><span class="pname">${s.name}</span>${phoneHtml}</div>
       <div class="pmeta">${meta}</div>
     </div>
     <div style="text-align:right;flex-shrink:0">
