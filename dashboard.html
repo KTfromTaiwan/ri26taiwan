@@ -5,371 +5,320 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, maximum-scale=1">
 <title>Chekcin Dashboard</title>
 <style>
-@import url('https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700;900&family=DM+Mono:wght@400;500&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700;900&family=DM+Mono:wght@300;400;500&display=swap');
 
 :root {
-  --bg:          #0d0f14;
-  --surface:     #151820;
-  --card:        #1c2030;
-  --border:      #2a2f42;
-  --accent:      #4ade80;
-  --accent-dim:  rgba(74,222,128,.12);
-  --accent-glow: rgba(74,222,128,.35);
-  --warn:        #f59e0b;
-  --err:         #f87171;
-  --blue:        #60a5fa;
-  --text:        #e8eaf2;
-  --muted:       #6b7280;
-  --radius:      16px;
+  --bg:      #0d0f14;
+  --card:    #161b27;
+  --border:  #1f2535;
+  --accent:  #4ade80;
+  --warn:    #d97706;
+  --err:     #f87171;
+  --blue:    #60a5fa;
+  --text:    #e8eaf2;
+  --muted:   #6b7280;
+  --dim:     #374151;
+  --r:       14px;
 }
-
-* { box-sizing: border-box; margin: 0; padding: 0; }
+* { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
 html, body {
-  min-height: 100%;
-  background: var(--bg);
-  color: var(--text);
-  font-family: 'Noto Sans TC', -apple-system, BlinkMacSystemFont, 'PingFang TC', 'Microsoft JhengHei', sans-serif;
-  -webkit-font-smoothing: antialiased;
-  overflow-x: hidden;
+  min-height: 100%; background: var(--bg); color: var(--text);
+  font-family: 'Noto Sans TC', -apple-system, 'PingFang TC', 'Microsoft JhengHei', sans-serif;
+  -webkit-font-smoothing: antialiased; overflow-x: hidden;
 }
 body::before {
-  content: '';
-  position: fixed; inset: 0;
-  background-image:
-    linear-gradient(rgba(74,222,128,.03) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(74,222,128,.03) 1px, transparent 1px);
-  background-size: 40px 40px;
-  pointer-events: none; z-index: 0;
+  content: ''; position: fixed; inset: 0;
+  background-image: linear-gradient(rgba(74,222,128,.025) 1px,transparent 1px), linear-gradient(90deg,rgba(74,222,128,.025) 1px,transparent 1px);
+  background-size: 40px 40px; pointer-events: none; z-index: 0;
 }
 
 /* ── Views ── */
-.view { position: relative; z-index: 1; min-height: 100vh; padding: 32px 20px 80px; display: none; flex-direction: column; align-items: center; }
-.view.active { display: flex; }
-.inner { width: 100%; max-width: 680px; display: flex; flex-direction: column; gap: 14px; }
+.view { position: relative; z-index: 1; min-height: 100vh; padding: 32px 18px 80px; display: none; }
+.view.active { display: block; }
+.inner { max-width: 680px; margin: 0 auto; }
 
 /* ── Header ── */
-.header { text-align: center; }
-.brand  { font-size: 11px; font-family: 'DM Mono', monospace; letter-spacing: .2em; color: var(--muted); text-transform: uppercase; margin-bottom: 6px; }
-.header h1 { font-size: 26px; font-weight: 900; letter-spacing: -.5px; }
-.header h1 span { color: var(--accent); }
+.brand { font-size: 10px; letter-spacing: .22em; color: var(--dim); text-transform: uppercase; font-family: 'DM Mono', monospace; margin-bottom: 4px; }
+.headline { font-size: 24px; font-weight: 900; color: var(--text); letter-spacing: -.5px; margin-bottom: 22px; }
+.headline span { color: var(--accent); }
+
+/* ── Summary tiles ── */
+.tile-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px; }
+
+.tile {
+  background: var(--card); border: 1px solid var(--border);
+  border-radius: 20px; padding: 16px 16px 14px;
+  cursor: pointer; display: flex; flex-direction: column; gap: 10px;
+  transition: border-color .15s;
+}
+.tile:active { opacity: .85; }
+.tile.today     { border-color: rgba(74,222,128,.4); background: #131d19; }
+.tile.has-issue { border-color: rgba(248,113,113,.3); background: #1a1414; }
+
+.tile-date-row { display: flex; align-items: center; gap: 6px; }
+.tile-date { font-family: 'DM Mono', monospace; font-size: 17px; font-weight: 600; color: var(--text); letter-spacing: .01em; }
+.tile.today .tile-date { color: var(--accent); }
+.tile-dow  { font-family: 'DM Mono', monospace; font-size: 12px; color: var(--muted); }
+.today-tag { font-size: 9px; padding: 1px 6px; border-radius: 20px; background: rgba(74,222,128,.15); color: var(--accent); border: 1px solid rgba(74,222,128,.3); letter-spacing: .03em; }
+
+.tile-num-wrap { display: flex; align-items: baseline; gap: 5px; }
+.tile-num { font-family: 'DM Mono', monospace; font-size: 56px; font-weight: 300; line-height: .95; letter-spacing: -4px; color: var(--text); }
+.tile.today .tile-num { color: var(--accent); }
+.tile-num.green { color: var(--accent); }
+.tile-denom { font-family: 'DM Mono', monospace; font-size: 16px; color: var(--dim); letter-spacing: -.5px; }
+.tile-label { font-size: 11px; color: var(--muted); letter-spacing: .04em; margin-top: -4px; }
+
+.tile-chips { display: flex; gap: 4px; flex-wrap: wrap; min-height: 20px; }
+.chip { font-size: 10px; font-family: 'DM Mono', monospace; padding: 2px 7px; border-radius: 20px; white-space: nowrap; }
+.chip-red  { background: rgba(248,113,113,.12); color: var(--err);  }
+.chip-amb  { background: rgba(217,119,6,.12);   color: var(--warn); }
+.chip-blue { background: rgba(96,165,250,.12);  color: var(--blue); }
+.chip-ok   { background: rgba(74,222,128,.1);   color: var(--accent); }
 
 /* ── Back bar ── */
-.back-bar {
-  display: flex; align-items: center; gap: 12px;
-  background: var(--card); border: 1px solid var(--border);
-  border-radius: var(--radius); padding: 13px 18px;
-}
-.btn-back {
-  background: none; border: none; color: var(--accent);
-  font-family: 'DM Mono', monospace; font-size: 14px; font-weight: 500;
-  cursor: pointer; padding: 0; letter-spacing: .04em; transition: opacity .15s;
-}
-.btn-back:hover { opacity: .75; }
-.back-date { flex: 1; font-family: 'DM Mono', monospace; font-size: 15px; font-weight: 500; color: var(--text); }
-.btn-refresh {
-  background: none; border: none; color: var(--muted);
-  font-size: 16px; cursor: pointer; transition: color .15s;
-}
+.back-bar { display: flex; align-items: center; gap: 10px; margin-bottom: 18px; }
+.btn-back { font-family: 'DM Mono', monospace; font-size: 13px; color: var(--accent); background: rgba(74,222,128,.1); border: 1px solid rgba(74,222,128,.25); border-radius: 20px; padding: 5px 13px; cursor: pointer; transition: background .15s; white-space: nowrap; }
+.btn-back:active { background: rgba(74,222,128,.2); }
+.detail-date { font-family: 'DM Mono', monospace; font-size: 16px; font-weight: 600; color: var(--text); }
+.detail-dow  { font-size: 12px; color: var(--muted); margin-left: 5px; font-family: 'DM Mono', monospace; }
+.btn-refresh { margin-left: auto; background: none; border: none; color: var(--dim); font-size: 17px; cursor: pointer; transition: color .15s; }
 .btn-refresh:hover { color: var(--accent); }
 
-/* ── Summary day cards ── */
-.day-card {
-  background: var(--card); border: 1px solid var(--border);
-  border-radius: var(--radius); padding: 16px 18px;
-  cursor: pointer; transition: border-color .15s, background .15s;
-  display: flex; flex-direction: column; gap: 10px;
-}
-.day-card:hover { border-color: rgba(74,222,128,.4); background: rgba(28,32,48,.9); }
-.day-card.today { border-color: rgba(74,222,128,.3); }
-
-.day-top { display: flex; align-items: center; gap: 10px; }
-.day-label { font-family: 'DM Mono', monospace; font-size: 16px; font-weight: 500; color: var(--text); min-width: 100px; }
-.day-label .today-tag { font-size: 10px; background: var(--accent-dim); color: var(--accent); border: 1px solid rgba(74,222,128,.3); border-radius: 6px; padding: 1px 6px; margin-left: 6px; vertical-align: middle; font-family: 'Noto Sans TC', sans-serif; }
-.day-rate { font-family: 'DM Mono', monospace; font-size: 20px; font-weight: 500; margin-left: auto; }
-.day-rate.full { color: var(--accent); }
-.day-rate.good { color: var(--accent); }
-.day-rate.warn { color: var(--warn); }
-.day-rate.bad  { color: var(--err);  }
-
-.bar-track { height: 5px; background: var(--border); border-radius: 3px; overflow: hidden; }
-.bar-fill  { height: 100%; border-radius: 3px; transition: width .5s; }
-.bar-fill.full   { background: var(--accent); }
-.bar-fill.good   { background: var(--accent); }
-.bar-fill.warn   { background: var(--warn); }
-.bar-fill.bad    { background: var(--err);  }
-
-.day-stats { display: flex; gap: 14px; font-size: 12px; font-family: 'DM Mono', monospace; }
-.stat-ok   { color: var(--accent); }
-.stat-abs  { color: var(--muted);  }
-.stat-fail { color: var(--err);    }
-.stat-num  { font-weight: 500; margin-right: 3px; }
-
-/* ── KPI grid ── */
-.kpi-grid { display: grid; grid-template-columns: repeat(2,1fr); gap: 10px; }
-@media(min-width:480px){ .kpi-grid { grid-template-columns: repeat(4,1fr); } }
-.kpi-card { background: var(--card); border: 1px solid var(--border); border-radius: var(--radius); padding: 16px 12px; text-align: center; }
-.kpi-card.blue   { border-color: rgba(96,165,250,.3); }
-.kpi-card.green  { border-color: rgba(74,222,128,.3); }
-.kpi-card.yellow { border-color: rgba(245,158,11,.3); }
-.kpi-card.red    { border-color: rgba(248,113,113,.3); }
-.kpi-num { font-family: 'DM Mono', monospace; font-size: 32px; font-weight: 500; line-height: 1; margin-bottom: 5px; }
-.kpi-card.blue   .kpi-num { color: var(--blue);   }
-.kpi-card.green  .kpi-num { color: var(--accent); }
-.kpi-card.yellow .kpi-num { color: var(--warn);   }
-.kpi-card.red    .kpi-num { color: var(--err);    }
-.kpi-label { font-size: 11px; color: var(--muted); }
-.kpi-sub   { font-size: 10px; font-family: 'DM Mono', monospace; color: var(--muted); margin-top: 3px; }
+/* ── KPI row ── */
+.kpi-row { display: grid; grid-template-columns: repeat(2,1fr); gap: 8px; margin-bottom: 18px; }
+.kpi { background: var(--card); border: 1px solid var(--border); border-radius: var(--r); padding: 13px 14px; }
+.kpi.green  { border-color: rgba(74,222,128,.3); }
+.kpi.yellow { border-color: rgba(217,119,6,.25); }
+.kpi.red    { border-color: rgba(248,113,113,.25); }
+.kpi.blue   { border-color: rgba(96,165,250,.25); }
+.kpi-n { font-family: 'DM Mono', monospace; font-size: 32px; font-weight: 300; line-height: 1; letter-spacing: -2px; }
+.kpi.green  .kpi-n { color: var(--accent); }
+.kpi.yellow .kpi-n { color: var(--warn);   }
+.kpi.red    .kpi-n { color: var(--err);    }
+.kpi.blue   .kpi-n { color: var(--blue);   }
+.kpi-lbl { font-size: 11px; color: var(--muted); margin-top: 4px; letter-spacing: .04em; }
+.kpi-sub { font-size: 10px; font-family: 'DM Mono', monospace; color: var(--dim); margin-top: 2px; }
 
 /* ── Section label ── */
-.section-label { font-size: 11px; font-family: 'DM Mono', monospace; letter-spacing: .18em; color: var(--muted); text-transform: uppercase; padding: 0 2px; }
+.sec { font-size: 10px; font-family: 'DM Mono', monospace; letter-spacing: .18em; color: var(--muted); text-transform: uppercase; margin-bottom: 8px; margin-top: 4px; }
 
 /* ── Shift cards ── */
-.shift-card { background: var(--card); border: 1px solid var(--border); border-radius: var(--radius); overflow: hidden; }
-.shift-hd {
-  display: flex; align-items: center; gap: 12px;
-  padding: 14px 18px; cursor: pointer; user-select: none; transition: background .12s;
-}
-.shift-hd:hover { background: rgba(255,255,255,.03); }
-.shift-time { font-family: 'DM Mono', monospace; font-size: 18px; font-weight: 500; color: var(--accent); min-width: 54px; }
-.shift-bar-wrap { flex: 1; }
-.shift-bar-track { height: 5px; background: var(--border); border-radius: 3px; overflow: hidden; margin-bottom: 5px; }
-.shift-bar-fill  { height: 100%; border-radius: 3px; }
-.shift-bar-fill.good { background: var(--accent); }
-.shift-bar-fill.warn { background: var(--warn); }
-.shift-bar-fill.bad  { background: var(--err);  }
-.shift-counts { font-size: 12px; color: var(--muted); font-family: 'DM Mono', monospace; }
-.shift-counts strong { color: var(--text); }
-.chevron { color: var(--muted); font-size: 12px; transition: transform .2s; }
+.shift-card { background: var(--card); border: 1px solid var(--border); border-radius: var(--r); margin-bottom: 8px; overflow: hidden; }
+.shift-hd { display: flex; align-items: center; gap: 10px; padding: 13px 16px; cursor: pointer; user-select: none; }
+.shift-hd:active { background: rgba(255,255,255,.02); }
+.shift-time { font-family: 'DM Mono', monospace; font-size: 17px; font-weight: 500; color: var(--accent); min-width: 52px; }
+.shift-info { flex: 1; }
+.shift-count { font-size: 13px; color: var(--text); font-family: 'DM Mono', monospace; }
+.shift-count .alert { color: var(--err); }
+.shift-count .pending { color: var(--blue); }
+.shift-venues { font-size: 11px; color: var(--muted); margin-top: 2px; }
+.chevron { font-family: 'DM Mono', monospace; font-size: 11px; color: var(--dim); transition: transform .2s; }
 .shift-card.open .chevron { transform: rotate(180deg); }
 .shift-body { display: none; border-top: 1px solid var(--border); }
 .shift-card.open .shift-body { display: block; }
 
-/* ── Staff row ── */
-.staff-row { display: flex; align-items: flex-start; gap: 12px; padding: 11px 18px; border-bottom: 1px solid rgba(42,47,66,.5); }
-.staff-row:last-child { border-bottom: none; }
-.staff-dot { width: 8px; height: 8px; border-radius: 50%; margin-top: 5px; flex-shrink: 0; }
-.dot-present { background: var(--accent); box-shadow: 0 0 5px var(--accent-glow); }
-.dot-failed  { background: var(--warn); }
-.dot-absent  { background: var(--muted); }
-.staff-info { flex: 1; min-width: 0; }
-.staff-name { font-size: 14px; font-weight: 700; margin-bottom: 3px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.staff-meta { font-size: 12px; color: var(--muted); }
-.staff-meta span { margin-right: 8px; }
-.fail-reason { font-size: 11px; color: var(--err); margin-top: 3px; }
-.staff-right { text-align: right; flex-shrink: 0; }
-.badge { display: inline-block; font-size: 11px; font-family: 'DM Mono', monospace; padding: 2px 8px; border-radius: 6px; }
-.badge-ok   { background: var(--accent-dim); color: var(--accent); border: 1px solid rgba(74,222,128,.25); }
-.badge-fail { background: rgba(245,158,11,.1); color: var(--warn); border: 1px solid rgba(245,158,11,.25); }
-.badge-abs  { background: rgba(107,114,128,.1); color: var(--muted); border: 1px solid rgba(107,114,128,.2); }
-.badge-out  { background: rgba(96,165,250,.1); color: var(--blue); border: 1px solid rgba(96,165,250,.25); }
-.punch-time { font-family: 'DM Mono', monospace; font-size: 11px; color: var(--muted); margin-top: 3px; }
+/* ── Person row ── */
+.prow { display: flex; align-items: center; gap: 10px; padding: 11px 16px; border-bottom: 1px solid rgba(31,37,53,.6); }
+.prow:last-child { border-bottom: none; }
+.pdot { width: 7px; height: 7px; border-radius: 50%; flex-shrink: 0; }
+.pdot.ok   { background: var(--accent); box-shadow: 0 0 5px rgba(74,222,128,.4); }
+.pdot.fail { background: var(--warn); }
+.pdot.abs  { background: var(--muted); }
+.pdot.pend { background: var(--blue); }
+.pinfo { flex: 1; min-width: 0; }
+.pname { font-size: 13px; font-weight: 700; color: var(--text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.pmeta { font-size: 11px; color: var(--muted); margin-top: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.pbadge { font-size: 10px; font-family: 'DM Mono', monospace; padding: 2px 7px; border-radius: 20px; flex-shrink: 0; }
+.pbadge.ok   { background: rgba(74,222,128,.1);  color: var(--accent); }
+.pbadge.fail { background: rgba(217,119,6,.1);   color: var(--warn);   }
+.pbadge.abs  { background: rgba(107,114,128,.1); color: var(--muted);  }
+.pbadge.pend { background: rgba(96,165,250,.1);  color: var(--blue);   }
+.pbadge.out  { background: rgba(96,165,250,.1);  color: var(--blue);   }
+.ppunch { font-family: 'DM Mono', monospace; font-size: 10px; color: var(--dim); margin-top: 3px; }
 
-/* ── Search + filter ── */
-.search-wrap {
-  position: relative;
-  background: var(--card); border: 1px solid var(--border);
-  border-radius: var(--radius); overflow: hidden;
-}
-.search-input {
-  width: 100%; padding: 13px 18px 13px 44px;
-  background: none; border: none; outline: none;
-  color: var(--text); font-size: 14px; font-family: 'Noto Sans TC', sans-serif;
-}
-.search-icon { position: absolute; left: 16px; top: 50%; transform: translateY(-50%); color: var(--muted); font-size: 15px; pointer-events: none; }
-.search-input::placeholder { color: var(--muted); }
+/* ── Search ── */
+.search-wrap { background: var(--card); border: 1px solid var(--border); border-radius: 12px; display: flex; align-items: center; gap: 8px; padding: 11px 14px; margin-bottom: 8px; }
+.search-wrap input { flex: 1; background: none; border: none; outline: none; color: var(--text); font-size: 13px; font-family: 'Noto Sans TC', sans-serif; }
+.search-wrap input::placeholder { color: var(--muted); }
+.search-icon { color: var(--muted); font-size: 14px; flex-shrink: 0; }
 
-.filter-tabs { display: flex; background: var(--card); border: 1px solid var(--border); border-radius: var(--radius); overflow: hidden; }
-.filter-tab {
-  flex: 1; padding: 11px 4px; text-align: center;
-  font-size: 12px; font-family: 'DM Mono', monospace; color: var(--muted);
-  cursor: pointer; border: none; background: none; transition: all .15s;
-  border-bottom: 2px solid transparent; letter-spacing: .03em;
-}
-.filter-tab.active { color: var(--accent); border-bottom-color: var(--accent); }
-.filter-tab:hover:not(.active) { color: var(--text); }
-.filter-tab .tab-count { font-size: 10px; opacity: .7; margin-left: 3px; }
+/* ── Filter tabs ── */
+.tabs { display: flex; background: var(--card); border: 1px solid var(--border); border-radius: 12px; overflow: hidden; margin-bottom: 8px; }
+.tab { flex: 1; text-align: center; padding: 10px 2px; font-size: 11px; font-family: 'DM Mono', monospace; color: var(--muted); border: none; background: none; cursor: pointer; border-bottom: 2px solid transparent; transition: color .15s, border-color .15s; }
+.tab.active { color: var(--accent); border-bottom-color: var(--accent); }
+.tab .tc { font-size: 9px; opacity: .7; display: block; margin-top: 1px; }
 
-/* ── People list ── */
-.people-card { background: var(--card); border: 1px solid var(--border); border-radius: var(--radius); overflow: hidden; }
-.empty-msg { text-align: center; padding: 32px 20px; font-size: 13px; font-family: 'DM Mono', monospace; color: var(--muted); }
+/* ── People card ── */
+.people-card { background: var(--card); border: 1px solid var(--border); border-radius: var(--r); overflow: hidden; }
+.empty-row { text-align: center; padding: 28px; font-size: 12px; font-family: 'DM Mono', monospace; color: var(--muted); }
 
-/* ── Msg / Loader ── */
-.loader { text-align: center; padding: 48px 20px; font-size: 13px; font-family: 'DM Mono', monospace; color: var(--muted); }
-.spin { display: inline-block; animation: spin .8s linear infinite; margin-right: 8px; }
+/* ── Loader ── */
+.loader { text-align: center; padding: 60px 20px; font-size: 12px; font-family: 'DM Mono', monospace; color: var(--muted); }
+.spin { display: inline-block; animation: spin .7s linear infinite; margin-right: 6px; }
 @keyframes spin { to { transform: rotate(360deg); } }
-
-/* highlight match */
-.hl { background: rgba(74,222,128,.25); border-radius: 2px; }
 </style>
 </head>
 <body>
 
-<!-- ═══════════════════════════════════════════
-     VIEW 1: Summary
-═══════════════════════════════════════════════ -->
+<!-- ═══════════ SUMMARY ═══════════ -->
 <div id="viewSummary" class="view active">
 <div class="inner">
-
-  <div class="header">
-    <div class="brand">Chekcin System</div>
-    <h1>出勤 <span>Dashboard</span></h1>
-  </div>
-
-  <div id="summaryContent">
-    <div class="loader"><span class="spin">⟳</span> 載入中…</div>
-  </div>
-
+  <div class="brand">Chekcin System</div>
+  <div class="headline">出勤 <span>Dashboard</span></div>
+  <div id="summaryContent"><div class="loader"><span class="spin">⟳</span> 載入中…</div></div>
 </div>
 </div>
 
-<!-- ═══════════════════════════════════════════
-     VIEW 2: Day Detail
-═══════════════════════════════════════════════ -->
+<!-- ═══════════ DETAIL ═══════════ -->
 <div id="viewDetail" class="view">
 <div class="inner">
 
-  <!-- Back bar -->
   <div class="back-bar">
     <button class="btn-back" onclick="showSummary()">← 總表</button>
-    <span class="back-date" id="detailDateLabel">—</span>
+    <div><span class="detail-date" id="detailDate">—</span><span class="detail-dow" id="detailDow"></span></div>
     <button class="btn-refresh" onclick="loadDetail(currentDate)" title="重新整理">↺</button>
   </div>
 
-  <!-- KPI -->
-  <div class="kpi-grid" id="kpiGrid" style="display:none">
-    <div class="kpi-card blue" ><div class="kpi-num" id="k0">—</div><div class="kpi-label">排班人數</div></div>
-    <div class="kpi-card green"><div class="kpi-num" id="k1">—</div><div class="kpi-label">已到班</div><div class="kpi-sub" id="k1p">—</div></div>
-    <div class="kpi-card yellow"><div class="kpi-num" id="k2">—</div><div class="kpi-label">打卡失敗</div></div>
-    <div class="kpi-card red"  ><div class="kpi-num" id="k3">—</div><div class="kpi-label">缺席</div></div>
+  <div class="kpi-row" id="kpiRow" style="display:none">
+    <div class="kpi blue" ><div class="kpi-n" id="k0">—</div><div class="kpi-lbl">排班人數</div><div class="kpi-sub" id="k0s"></div></div>
+    <div class="kpi green"><div class="kpi-n" id="k1">—</div><div class="kpi-lbl">已到班</div><div class="kpi-sub" id="k1s">—</div></div>
+    <div class="kpi yellow"><div class="kpi-n" id="k2">—</div><div class="kpi-lbl">打卡失敗</div></div>
+    <div class="kpi red"  ><div class="kpi-n" id="k3">—</div><div class="kpi-lbl">缺席</div></div>
   </div>
 
-  <!-- Shifts -->
-  <div class="section-label" id="shiftLabel" style="display:none">班次明細</div>
+  <div class="sec" id="secShift" style="display:none">班次明細</div>
   <div id="shiftsContainer"></div>
 
-  <!-- People list -->
-  <div class="section-label" id="peopleLabel" style="display:none">人員清單</div>
+  <div class="sec" id="secPeople" style="display:none" style="margin-top:8px">人員清單</div>
 
-  <div id="searchWrap" style="display:none">
+  <div id="searchArea" style="display:none">
     <div class="search-wrap">
       <span class="search-icon">🔍</span>
-      <input class="search-input" id="searchInput" type="text" placeholder="搜尋姓名 / 組別 / 場地…" oninput="applyFilter()">
+      <input type="text" id="searchInput" placeholder="搜尋姓名 / 組別 / 場地…" oninput="applyFilter()">
     </div>
-  </div>
-
-  <div class="filter-tabs" id="filterTabs" style="display:none">
-    <button class="filter-tab active" data-f="alert"   onclick="setFilter('alert')">需關注<span class="tab-count" id="tcAlert"></span></button>
-    <button class="filter-tab"        data-f="all"     onclick="setFilter('all')">全部<span class="tab-count" id="tcAll"></span></button>
-    <button class="filter-tab"        data-f="present" onclick="setFilter('present')">到班<span class="tab-count" id="tcPresent"></span></button>
-    <button class="filter-tab"        data-f="failed"  onclick="setFilter('failed')">失敗<span class="tab-count" id="tcFailed"></span></button>
-    <button class="filter-tab"        data-f="absent"  onclick="setFilter('absent')">缺席<span class="tab-count" id="tcAbsent"></span></button>
-  </div>
-
-  <div class="people-card" id="peopleCard" style="display:none">
-    <div id="peopleList"></div>
+    <div class="tabs">
+      <button class="tab active" data-f="alert"   onclick="setFilter('alert')"  >需關注<span class="tc" id="tcA"></span></button>
+      <button class="tab"        data-f="all"     onclick="setFilter('all')"    >全部<span class="tc" id="tcAll"></span></button>
+      <button class="tab"        data-f="present" onclick="setFilter('present')">到班<span class="tc" id="tcOk"></span></button>
+      <button class="tab"        data-f="failed"  onclick="setFilter('failed')" >失敗<span class="tc" id="tcFail"></span></button>
+      <button class="tab"        data-f="absent"  onclick="setFilter('absent')" >缺席<span class="tc" id="tcAbs"></span></button>
+      <button class="tab"        data-f="pending" onclick="setFilter('pending')">待打卡<span class="tc" id="tcPend"></span></button>
+    </div>
+    <div class="people-card" id="peopleCard"><div class="empty-row">載入中…</div></div>
   </div>
 
   <div id="detailMsg"></div>
-
 </div>
 </div>
 
 <script>
-const GAS = 'https://script.google.com/macros/s/AKfycbyhliEfJMfWsDzniDiFZhyN7pHN3T7bxD7mmlGBQjJgorjoO2uFCnI7D1AkABKTXxcfVw/exec';
+const GAS  = 'https://script.google.com/macros/s/AKfycbzdJ_XW51f7LmRsgX6T6yVIm29JaEU1e-1Y4F7X7RQ1kTc0iLuocJeU2YUiT7wFI15D3Q/exec';
+const DOW  = ['日','一','二','三','四','五','六'];
+const DAYS = 7;
 
 let currentDate   = '';
 let allStaff      = [];
 let currentFilter = 'alert';
-let currentQuery  = '';
-const DAYS_BACK   = 7;
 
-// ─── Day-of-week labels ───────────────────────────────
-const DOW = ['日','一','二','三','四','五','六'];
-function fmtDate(d) {
-  const dt = new Date(d + 'T00:00:00');
-  const today = todayStr();
-  const label = d === today ? d.slice(5).replace('-','/') + ' <span class="today-tag">今天</span>' : d.slice(5).replace('-','/') + '（' + DOW[dt.getDay()] + '）';
-  return label;
-}
 function todayStr() {
   const d = new Date();
   return d.getFullYear() + '-' + pad(d.getMonth()+1) + '-' + pad(d.getDate());
 }
 function pad(n) { return String(n).padStart(2,'0'); }
+function fmtMD(d) { return d.slice(5).replace('-','/'); }
+function getDow(d) { return DOW[new Date(d+'T00:00:00').getDay()]; }
 
-// ─── Views ───────────────────────────────────────────
+// ── Views ──────────────────────────────────────────────
 function showSummary() {
   document.getElementById('viewDetail').classList.remove('active');
   document.getElementById('viewSummary').classList.add('active');
   window.scrollTo(0,0);
 }
-function showDetail() {
+function showDetailView() {
   document.getElementById('viewSummary').classList.remove('active');
   document.getElementById('viewDetail').classList.add('active');
   window.scrollTo(0,0);
 }
 
-// ─── Summary ─────────────────────────────────────────
+// ── Summary ────────────────────────────────────────────
 async function loadSummary() {
-  document.getElementById('summaryContent').innerHTML = '<div class="loader"><span class="spin">⟳</span> 載入中…</div>';
   try {
-    const r = await fetch(GAS + '?action=getWeekSummary&days=' + DAYS_BACK);
+    const r = await fetch(GAS + '?action=getWeekSummary&days=' + DAYS);
     const j = await r.json();
     renderSummary(j.result);
   } catch(e) {
-    document.getElementById('summaryContent').innerHTML = '<div class="loader">⚠️ 載入失敗，請確認 GAS 已重新部署。</div>';
+    document.getElementById('summaryContent').innerHTML =
+      '<div class="loader">⚠️ 載入失敗，請確認 GAS 已重新部署。</div>';
   }
 }
 
 function renderSummary(days) {
-  if (!days || days.length === 0) {
-    document.getElementById('summaryContent').innerHTML = '<div class="loader">近 ' + DAYS_BACK + ' 天無排班資料。</div>';
+  if (!days || !days.length) {
+    document.getElementById('summaryContent').innerHTML =
+      '<div class="loader">近 ' + DAYS + ' 天無排班資料。</div>';
     return;
   }
   const today = todayStr();
-  let html = '';
+  let html = '<div class="tile-grid">';
   [...days].reverse().forEach(d => {
-    const pct      = d.scheduled > 0 ? Math.round(d.present / d.scheduled * 100) : 0;
-    const rateClass = pct === 100 ? 'full' : pct >= 85 ? 'good' : pct >= 60 ? 'warn' : 'bad';
-    const isToday  = d.date === today;
-    html += `
-    <div class="day-card${isToday ? ' today' : ''}" onclick="loadDetail('${d.date}')">
-      <div class="day-top">
-        <div class="day-label">${fmtDate(d.date)}</div>
-        <div class="day-rate ${rateClass}">${pct}%</div>
+    const isToday = d.date === today;
+    const hasIssue = d.absent > 0 || d.punch_failed > 0;
+    const allOk   = d.present === d.scheduled && !d.pending;
+    let cls = isToday ? 'today' : hasIssue ? 'has-issue' : '';
+    const numColor = (allOk || isToday) ? '' : hasIssue ? '' : 'green';
+
+    let chips = '';
+    if (allOk) {
+      chips = '<span class="chip chip-ok">全員到班</span>';
+    } else {
+      if (d.absent      > 0) chips += '<span class="chip chip-red">缺席 '      + d.absent      + '</span>';
+      if (d.punch_failed> 0) chips += '<span class="chip chip-amb">失敗 '      + d.punch_failed + '</span>';
+      if (d.pending     > 0) chips += '<span class="chip chip-blue">待打卡 '   + d.pending     + '</span>';
+    }
+
+    html += `<div class="tile ${cls}" onclick="loadDetail('${d.date}')">
+      <div class="tile-date-row">
+        <div class="tile-date">${fmtMD(d.date)}</div>
+        <div class="tile-dow">${getDow(d.date)}</div>
+        ${isToday ? '<span class="today-tag">今天</span>' : ''}
       </div>
-      <div class="bar-track"><div class="bar-fill ${rateClass}" style="width:${pct}%"></div></div>
-      <div class="day-stats">
-        <span class="stat-ok"><span class="stat-num">${d.present}</span>到班</span>
-        ${d.absent > 0      ? '<span class="stat-abs"><span class="stat-num">'  + d.absent      + '</span>缺席</span>' : ''}
-        ${d.punch_failed > 0 ? '<span class="stat-fail"><span class="stat-num">' + d.punch_failed + '</span>失敗</span>' : ''}
-        <span style="color:var(--muted);margin-left:auto;font-size:11px">${d.scheduled} 人排班</span>
+      <div>
+        <div class="tile-num-wrap">
+          <div class="tile-num ${allOk || isToday ? (allOk?'green':'') : hasIssue?'':'green'}"
+               style="${!isToday && allOk ? 'color:var(--accent)' : ''}"
+          >${d.present}</div>
+          <div class="tile-denom">/ ${d.scheduled}</div>
+        </div>
+        <div class="tile-label">已到班</div>
       </div>
+      <div class="tile-chips">${chips}</div>
     </div>`;
   });
+  html += '</div>';
   document.getElementById('summaryContent').innerHTML = html;
 }
 
-// ─── Detail ──────────────────────────────────────────
+// ── Detail ─────────────────────────────────────────────
 async function loadDetail(date) {
-  currentDate = date;
-  showDetail();
+  currentDate   = date;
+  currentFilter = 'alert';
+  allStaff      = [];
+  showDetailView();
+
+  const today = todayStr();
+  document.getElementById('detailDate').textContent = fmtMD(date);
+  document.getElementById('detailDow').textContent  = '週' + getDow(date) + (date === today ? '・今天' : '');
 
   // Reset
-  document.getElementById('kpiGrid').style.display      = 'none';
-  document.getElementById('shiftLabel').style.display   = 'none';
-  document.getElementById('peopleLabel').style.display  = 'none';
-  document.getElementById('searchWrap').style.display   = 'none';
-  document.getElementById('filterTabs').style.display   = 'none';
-  document.getElementById('peopleCard').style.display   = 'none';
-  document.getElementById('shiftsContainer').innerHTML  = '';
-  document.getElementById('searchInput').value          = '';
-  currentQuery  = '';
-  currentFilter = 'alert';
-  document.querySelectorAll('.filter-tab').forEach(t => t.classList.toggle('active', t.dataset.f === 'alert'));
-
-  document.getElementById('detailDateLabel').innerHTML = fmtDate(date);
-  document.getElementById('detailMsg').innerHTML = '<div class="loader"><span class="spin">⟳</span> 載入中…</div>';
+  document.getElementById('kpiRow').style.display      = 'none';
+  document.getElementById('secShift').style.display    = 'none';
+  document.getElementById('secPeople').style.display   = 'none';
+  document.getElementById('searchArea').style.display  = 'none';
+  document.getElementById('shiftsContainer').innerHTML = '';
+  document.getElementById('searchInput').value         = '';
+  document.getElementById('detailMsg').innerHTML       =
+    '<div class="loader"><span class="spin">⟳</span> 載入中…</div>';
+  document.querySelectorAll('.tab').forEach(t => t.classList.toggle('active', t.dataset.f === 'alert'));
 
   try {
     const r = await fetch(GAS + '?action=getDashboard&date=' + date);
@@ -377,7 +326,8 @@ async function loadDetail(date) {
     document.getElementById('detailMsg').innerHTML = '';
     renderDetail(j.result);
   } catch(e) {
-    document.getElementById('detailMsg').innerHTML = '<div class="loader">⚠️ 載入失敗，請確認 GAS 已重新部署。</div>';
+    document.getElementById('detailMsg').innerHTML =
+      '<div class="loader">⚠️ 載入失敗，請確認 GAS 已重新部署。</div>';
   }
 }
 
@@ -390,108 +340,109 @@ function renderDetail(data) {
   document.getElementById('k1').textContent = s.present;
   document.getElementById('k2').textContent = s.punch_failed;
   document.getElementById('k3').textContent = s.absent;
-  const pct = s.scheduled > 0 ? Math.round(s.present / s.scheduled * 100) : 0;
-  document.getElementById('k1p').textContent = pct + '%';
-  document.getElementById('kpiGrid').style.display = '';
+  document.getElementById('k1s').textContent = s.scheduled > 0 ? Math.round(s.present/s.scheduled*100) + '%' : '—';
+  document.getElementById('k0s').textContent = s.pending > 0 ? '⏳ ' + s.pending + ' 待打卡' : '';
+  document.getElementById('kpiRow').style.display = '';
 
   // Shifts
-  if (data.shifts.length > 0) {
-    document.getElementById('shiftLabel').style.display = '';
+  if (data.shifts.length) {
+    document.getElementById('secShift').style.display = '';
     const sc = document.getElementById('shiftsContainer');
     sc.innerHTML = '';
     data.shifts.forEach(sh => sc.appendChild(buildShiftCard(sh)));
   }
 
-  // People list
-  if (allStaff.length > 0) {
-    document.getElementById('peopleLabel').style.display = '';
-    document.getElementById('searchWrap').style.display  = '';
-    document.getElementById('filterTabs').style.display  = '';
-    document.getElementById('peopleCard').style.display  = '';
-
-    // Tab counts
-    document.getElementById('tcAll').textContent     = allStaff.length;
-    document.getElementById('tcAlert').textContent   = allStaff.filter(x => x.status !== 'present').length;
-    document.getElementById('tcPresent').textContent = allStaff.filter(x => x.status === 'present').length;
-    document.getElementById('tcFailed').textContent  = allStaff.filter(x => x.status === 'failed').length;
-    document.getElementById('tcAbsent').textContent  = allStaff.filter(x => x.status === 'absent').length;
-
+  // People
+  if (allStaff.length) {
+    document.getElementById('secPeople').style.display  = '';
+    document.getElementById('searchArea').style.display = '';
+    document.getElementById('tcA').textContent    = allStaff.filter(x=>x.status==='absent'||x.status==='failed').length;
+    document.getElementById('tcAll').textContent  = allStaff.length;
+    document.getElementById('tcOk').textContent   = allStaff.filter(x=>x.status==='present').length;
+    document.getElementById('tcFail').textContent = allStaff.filter(x=>x.status==='failed').length;
+    document.getElementById('tcAbs').textContent  = allStaff.filter(x=>x.status==='absent').length;
+    document.getElementById('tcPend').textContent = allStaff.filter(x=>x.status==='pending').length;
     applyFilter();
   }
 }
 
-// ─── Shift card ──────────────────────────────────────
+// ── Shift card ─────────────────────────────────────────
 function buildShiftCard(shift) {
-  const pct = shift.scheduled > 0 ? Math.round(shift.present / shift.scheduled * 100) : 0;
-  const barClass = pct === 100 ? 'good' : pct >= 75 ? 'warn' : 'bad';
-  const problems = shift.staff.filter(s => s.status !== 'present');
+  const problems = shift.staff.filter(s => s.status === 'absent' || s.status === 'failed');
+  const pending  = shift.staff.filter(s => s.status === 'pending');
+  const open     = problems.length > 0;
+
+  // Count label
+  let countHtml = `<strong>${shift.present}</strong> / ${shift.scheduled}`;
+  if (problems.length) countHtml += ` <span class="alert">・${problems.length} 未到</span>`;
+  if (pending.length)  countHtml += ` <span class="pending">・${pending.length} 待打卡</span>`;
+
+  // Venue list (unique)
+  const venues = [...new Set(shift.staff.map(s => s.venue).filter(Boolean))];
+  const venueStr = venues.slice(0,3).join('・') + (venues.length > 3 ? '…' : '');
+
   const card = document.createElement('div');
-  card.className = 'shift-card' + (problems.length > 0 ? ' open' : '');
-  card.innerHTML =
-    `<div class="shift-hd" onclick="this.closest('.shift-card').classList.toggle('open')">
+  card.className = 'shift-card' + (open ? ' open' : '');
+  card.innerHTML = `
+    <div class="shift-hd" onclick="this.closest('.shift-card').classList.toggle('open')">
       <div class="shift-time">${shift.time}</div>
-      <div class="shift-bar-wrap">
-        <div class="shift-bar-track"><div class="shift-bar-fill ${barClass}" style="width:${pct}%"></div></div>
-        <div class="shift-counts"><strong>${shift.present}</strong> / ${shift.scheduled} 人到班${problems.length > 0 ? ' ・<span style="color:var(--err)">' + problems.length + ' 人未到</span>' : ''}</div>
+      <div class="shift-info">
+        <div class="shift-count">${countHtml}</div>
+        ${venueStr ? '<div class="shift-venues">' + venueStr + '</div>' : ''}
       </div>
       <div class="chevron">▼</div>
     </div>
-    <div class="shift-body">${shift.staff.map(buildPersonRow).join('')}</div>`;
+    <div class="shift-body">
+      ${shift.staff.map(buildPersonRow).join('')}
+    </div>`;
   return card;
 }
 
+// ── Person row ─────────────────────────────────────────
 function buildPersonRow(s) {
-  const dot   = {present:'dot-present', failed:'dot-failed', absent:'dot-absent'}[s.status];
-  const badge = {present:'badge-ok',    failed:'badge-fail', absent:'badge-abs'  }[s.status];
-  const label = {present:'到班',         failed:'失敗',        absent:'缺席'       }[s.status];
-  return `<div class="staff-row">
-    <div class="staff-dot ${dot}"></div>
-    <div class="staff-info">
-      <div class="staff-name">${s.name}</div>
-      <div class="staff-meta">${s.group ? '<span>' + s.group + '</span>' : ''}<span>📍 ${s.venue}</span></div>
-      ${s.fail_reason ? '<div class="fail-reason">⚠ ' + s.fail_reason + '</div>' : ''}
+  const dotCls   = {present:'ok', failed:'fail', absent:'abs', pending:'pend'}[s.status] || 'abs';
+  const badgeCls = {present:'ok', failed:'fail', absent:'abs', pending:'pend'}[s.status] || 'abs';
+  const label    = {present:'到班', failed:'失敗', absent:'缺席', pending:'未到時間'}[s.status] || '—';
+  const meta     = [s.group, s.venue ? '📍 '+s.venue : '', s.fail_reason ? '⚠ '+s.fail_reason : ''].filter(Boolean).join('・');
+  const timeHtml = s.in_time ? '<div class="ppunch">' + s.in_time + '</div>' : '';
+  return `<div class="prow">
+    <div class="pdot ${dotCls}"></div>
+    <div class="pinfo">
+      <div class="pname">${s.name}</div>
+      <div class="pmeta">${meta}</div>
     </div>
-    <div class="staff-right">
-      <div class="badge ${badge}">${label}</div>
-      ${s.in_time ? '<div class="punch-time">' + s.in_time + '</div>' : ''}
-      ${s.out_verdict ? '<div class="badge badge-out" style="margin-top:4px">' + s.out_verdict + '</div>' : ''}
+    <div style="text-align:right;flex-shrink:0">
+      <div class="pbadge ${badgeCls}">${label}</div>
+      ${timeHtml}
+      ${s.out_verdict ? '<div class="pbadge out" style="margin-top:3px">' + s.out_verdict + '</div>' : ''}
     </div>
   </div>`;
 }
 
-// ─── People filter ────────────────────────────────────
+// ── Filter ─────────────────────────────────────────────
 function setFilter(f) {
   currentFilter = f;
-  document.querySelectorAll('.filter-tab').forEach(t => t.classList.toggle('active', t.dataset.f === f));
+  document.querySelectorAll('.tab').forEach(t => t.classList.toggle('active', t.dataset.f === f));
   applyFilter();
 }
 
 function applyFilter() {
-  currentQuery = document.getElementById('searchInput').value.trim().toLowerCase();
+  const q = document.getElementById('searchInput').value.trim().toLowerCase();
   let list = allStaff;
-
-  // Status filter
-  if      (currentFilter === 'alert')   list = list.filter(s => s.status !== 'present');
-  else if (currentFilter !== 'all')     list = list.filter(s => s.status === currentFilter);
-
-  // Search
-  if (currentQuery) {
-    list = list.filter(s =>
-      s.name.toLowerCase().includes(currentQuery)   ||
-      s.group.toLowerCase().includes(currentQuery)  ||
-      s.venue.toLowerCase().includes(currentQuery)
-    );
-  }
-
-  const el = document.getElementById('peopleList');
-  if (list.length === 0) {
-    el.innerHTML = '<div class="empty-msg">—&nbsp; 無符合資料</div>';
-    return;
-  }
-  el.innerHTML = list.map(s => buildPersonRow(s, currentQuery)).join('');
+  if (currentFilter === 'alert')         list = list.filter(s => s.status==='absent'||s.status==='failed');
+  else if (currentFilter !== 'all')      list = list.filter(s => s.status === currentFilter);
+  if (q) list = list.filter(s =>
+    s.name.toLowerCase().includes(q) ||
+    s.group.toLowerCase().includes(q) ||
+    s.venue.toLowerCase().includes(q)
+  );
+  const el = document.getElementById('peopleCard');
+  el.innerHTML = list.length
+    ? list.map(buildPersonRow).join('')
+    : '<div class="empty-row">— 無符合資料</div>';
 }
 
-// ─── Init ─────────────────────────────────────────────
+// ── Init ───────────────────────────────────────────────
 loadSummary();
 </script>
 </body>
