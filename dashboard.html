@@ -102,21 +102,6 @@ body::before {
 /* ── Section label ── */
 .sec { font-size: 10px; font-family: 'DM Mono', monospace; letter-spacing: .18em; color: var(--muted); text-transform: uppercase; margin-bottom: 8px; margin-top: 4px; }
 
-/* ── Shift cards ── */
-.shift-card { background: var(--card); border: 1px solid var(--border); border-radius: var(--r); margin-bottom: 8px; overflow: hidden; }
-.shift-hd { display: flex; align-items: center; gap: 10px; padding: 13px 16px; cursor: pointer; user-select: none; }
-.shift-hd:active { background: rgba(255,255,255,.02); }
-.shift-time { font-family: 'DM Mono', monospace; font-size: 17px; font-weight: 500; color: var(--accent); min-width: 52px; }
-.shift-info { flex: 1; }
-.shift-count { font-size: 13px; color: var(--text); font-family: 'DM Mono', monospace; }
-.shift-count .alert { color: var(--err); }
-.shift-count .pending { color: var(--blue); }
-.shift-venues { font-size: 11px; color: var(--muted); margin-top: 2px; }
-.chevron { font-family: 'DM Mono', monospace; font-size: 11px; color: var(--dim); transition: transform .2s; }
-.shift-card.open .chevron { transform: rotate(180deg); }
-.shift-body { display: none; border-top: 1px solid var(--border); }
-.shift-card.open .shift-body { display: block; }
-
 /* ── Person row ── */
 .prow { display: flex; align-items: center; gap: 10px; padding: 11px 16px; border-bottom: 1px solid rgba(31,37,53,.6); }
 .prow:last-child { border-bottom: none; }
@@ -186,10 +171,7 @@ body::before {
     <div class="kpi red"  ><div class="kpi-n" id="k3">—</div><div class="kpi-lbl">缺席</div></div>
   </div>
 
-  <div class="sec" id="secShift" style="display:none">班次明細</div>
-  <div id="shiftsContainer"></div>
-
-  <div class="sec" id="secPeople" style="display:none" style="margin-top:8px">人員清單</div>
+  <div class="sec" id="secPeople" style="display:none">需關注人員</div>
 
   <div id="searchArea" style="display:none">
     <div class="search-wrap">
@@ -212,7 +194,7 @@ body::before {
 </div>
 
 <script>
-const GAS  = 'https://script.google.com/macros/s/AKfycbyX7pXCN_-Cke_nvnW8NtIIxWG4k3E4eas1Wa0DcXb4L7-_mTTxKGj9VMQUv0yTzt59HA/exec';
+const GAS  = 'https://script.google.com/macros/s/AKfycbxxvOR3lDFjuu89owSVle9lczKrbQ-aP4uilvHlNDNKBIGeEKYlwWbP14fX6GRVTIsOdA/exec';
 const DOW  = ['日','一','二','三','四','五','六'];
 const DAYS = 7;
 
@@ -311,10 +293,8 @@ async function loadDetail(date) {
 
   // Reset
   document.getElementById('kpiRow').style.display      = 'none';
-  document.getElementById('secShift').style.display    = 'none';
   document.getElementById('secPeople').style.display   = 'none';
   document.getElementById('searchArea').style.display  = 'none';
-  document.getElementById('shiftsContainer').innerHTML = '';
   document.getElementById('searchInput').value         = '';
   document.getElementById('detailMsg').innerHTML       =
     '<div class="loader"><span class="spin">⟳</span> 載入中…</div>';
@@ -344,14 +324,6 @@ function renderDetail(data) {
   document.getElementById('k0s').textContent = s.pending > 0 ? '⏳ ' + s.pending + ' 待打卡' : '';
   document.getElementById('kpiRow').style.display = '';
 
-  // Shifts
-  if (data.shifts.length) {
-    document.getElementById('secShift').style.display = '';
-    const sc = document.getElementById('shiftsContainer');
-    sc.innerHTML = '';
-    data.shifts.forEach(sh => sc.appendChild(buildShiftCard(sh)));
-  }
-
   // People
   if (allStaff.length) {
     document.getElementById('secPeople').style.display  = '';
@@ -364,38 +336,6 @@ function renderDetail(data) {
     document.getElementById('tcPend').textContent = allStaff.filter(x=>x.status==='pending').length;
     applyFilter();
   }
-}
-
-// ── Shift card ─────────────────────────────────────────
-function buildShiftCard(shift) {
-  const problems = shift.staff.filter(s => s.status === 'absent' || s.status === 'failed');
-  const pending  = shift.staff.filter(s => s.status === 'pending');
-  const open     = problems.length > 0;
-
-  // Count label
-  let countHtml = `<strong>${shift.present}</strong> / ${shift.scheduled}`;
-  if (problems.length) countHtml += ` <span class="alert">・${problems.length} 未到</span>`;
-  if (pending.length)  countHtml += ` <span class="pending">・${pending.length} 待打卡</span>`;
-
-  // Venue list (unique)
-  const venues = [...new Set(shift.staff.map(s => s.venue).filter(Boolean))];
-  const venueStr = venues.slice(0,3).join('・') + (venues.length > 3 ? '…' : '');
-
-  const card = document.createElement('div');
-  card.className = 'shift-card' + (open ? ' open' : '');
-  card.innerHTML = `
-    <div class="shift-hd" onclick="this.closest('.shift-card').classList.toggle('open')">
-      <div class="shift-time">${shift.time}</div>
-      <div class="shift-info">
-        <div class="shift-count">${countHtml}</div>
-        ${venueStr ? '<div class="shift-venues">' + venueStr + '</div>' : ''}
-      </div>
-      <div class="chevron">▼</div>
-    </div>
-    <div class="shift-body">
-      ${shift.staff.map(buildPersonRow).join('')}
-    </div>`;
-  return card;
 }
 
 // ── Person row ─────────────────────────────────────────
