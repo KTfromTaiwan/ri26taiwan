@@ -4,8 +4,10 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, maximum-scale=1">
 <title>Chekcin Dashboard</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700;900&family=DM+Mono:wght@300;400;500&display=swap">
 <style>
-@import url('https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700;900&family=DM+Mono:wght@300;400;500&display=swap');
 
 :root {
   --bg:      #0d0f14;
@@ -213,6 +215,7 @@ const DOW  = ['日','一','二','三','四','五','六'];
 let currentDate   = '';
 let allStaff      = [];
 let currentFilter = 'alert';
+
 
 function todayStr() {
   const d = new Date();
