@@ -75,6 +75,19 @@ body::before {
 .chip-blue { background: rgba(96,165,250,.12);  color: var(--blue); }
 .chip-ok   { background: rgba(74,222,128,.1);   color: var(--accent); }
 
+/* ── Future tiles ── */
+.tile-future {
+  background: #151920; border: 1px solid #232b3a;
+  border-radius: 20px; padding: 16px 16px 14px;
+  display: flex; flex-direction: column; gap: 10px;
+  opacity: .7; pointer-events: none;
+}
+.tf-date { font-family: 'DM Mono', monospace; font-size: 17px; font-weight: 600; color: #3d4a5c; }
+.tf-dow  { font-family: 'DM Mono', monospace; font-size: 12px; color: #2e3a4a; margin-left: 4px; }
+.tf-num  { font-family: 'DM Mono', monospace; font-size: 56px; font-weight: 300; line-height: .95; letter-spacing: -4px; color: #252e3e; }
+.tf-label{ font-size: 11px; color: #3d4a5c; letter-spacing: .04em; margin-top: -4px; }
+.tf-lock { font-size: 10px; color: #3d4a5c; font-family: 'DM Mono', monospace; padding: 2px 8px; border-radius: 20px; border: 1px solid #2a3448; display: inline-block; }
+
 /* ── Back bar ── */
 .back-bar { display: flex; align-items: center; gap: 10px; margin-bottom: 18px; }
 .btn-back { font-family: 'DM Mono', monospace; font-size: 13px; color: var(--accent); background: rgba(74,222,128,.1); border: 1px solid rgba(74,222,128,.25); border-radius: 20px; padding: 5px 13px; cursor: pointer; transition: background .15s; white-space: nowrap; }
@@ -194,9 +207,8 @@ body::before {
 </div>
 
 <script>
-const GAS  = 'https://script.google.com/macros/s/AKfycbxxvOR3lDFjuu89owSVle9lczKrbQ-aP4uilvHlNDNKBIGeEKYlwWbP14fX6GRVTIsOdA/exec';
+const GAS  = 'https://script.google.com/macros/s/AKfycbyNT_0kv7PmLAFj1k5w8enmbYb1xcLFpUnT1ZS0KyN94aWhE1ThE7bEiWv3yZcb8UWeuw/exec';
 const DOW  = ['日','一','二','三','四','五','六'];
-const DAYS = 7;
 
 let currentDate   = '';
 let allStaff      = [];
@@ -225,7 +237,7 @@ function showDetailView() {
 // ── Summary ────────────────────────────────────────────
 async function loadSummary() {
   try {
-    const r = await fetch(GAS + '?action=getWeekSummary&days=' + DAYS);
+    const r = await fetch(GAS + '?action=getWeekSummary');
     const j = await r.json();
     renderSummary(j.result);
   } catch(e) {
@@ -237,25 +249,43 @@ async function loadSummary() {
 function renderSummary(days) {
   if (!days || !days.length) {
     document.getElementById('summaryContent').innerHTML =
-      '<div class="loader">近 ' + DAYS + ' 天無排班資料。</div>';
+      '<div class="loader">班表尚無資料。</div>';
     return;
   }
   const today = todayStr();
   let html = '<div class="tile-grid">';
-  [...days].reverse().forEach(d => {
-    const isToday = d.date === today;
+  days.forEach(d => {
+    const isToday  = d.date === today;
+
+    // ── 未來灰階 tile ──
+    if (d.future) {
+      html += `<div class="tile-future">
+        <div class="tile-date-row">
+          <div class="tf-date">${fmtMD(d.date)}</div>
+          <div class="tf-dow">${getDow(d.date)}</div>
+        </div>
+        <div>
+          <div class="tile-num-wrap"><div class="tf-num">—</div></div>
+          <div class="tf-label">已到班</div>
+        </div>
+        <div><span class="tf-lock">尚未開始</span></div>
+      </div>`;
+      return;
+    }
+
+    // ── 過去 / 今天 active tile ──
     const hasIssue = d.absent > 0 || d.punch_failed > 0;
-    const allOk   = d.present === d.scheduled && !d.pending;
-    let cls = isToday ? 'today' : hasIssue ? 'has-issue' : '';
-    const numColor = (allOk || isToday) ? '' : hasIssue ? '' : 'green';
+    const allOk    = d.present === d.scheduled && !d.pending && !hasIssue;
+    const cls      = isToday ? 'today' : hasIssue ? 'has-issue' : '';
+    const numGreen = allOk ? ' green' : '';
 
     let chips = '';
     if (allOk) {
       chips = '<span class="chip chip-ok">全員到班</span>';
     } else {
-      if (d.absent      > 0) chips += '<span class="chip chip-red">缺席 '      + d.absent      + '</span>';
-      if (d.punch_failed> 0) chips += '<span class="chip chip-amb">失敗 '      + d.punch_failed + '</span>';
-      if (d.pending     > 0) chips += '<span class="chip chip-blue">待打卡 '   + d.pending     + '</span>';
+      if (d.absent       > 0) chips += '<span class="chip chip-red">缺席 '     + d.absent       + '</span>';
+      if (d.punch_failed > 0) chips += '<span class="chip chip-amb">失敗 '     + d.punch_failed + '</span>';
+      if (d.pending      > 0) chips += '<span class="chip chip-blue">待打卡 '  + d.pending      + '</span>';
     }
 
     html += `<div class="tile ${cls}" onclick="loadDetail('${d.date}')">
@@ -266,9 +296,7 @@ function renderSummary(days) {
       </div>
       <div>
         <div class="tile-num-wrap">
-          <div class="tile-num ${allOk || isToday ? (allOk?'green':'') : hasIssue?'':'green'}"
-               style="${!isToday && allOk ? 'color:var(--accent)' : ''}"
-          >${d.present}</div>
+          <div class="tile-num${numGreen}">${d.present}</div>
           <div class="tile-denom">/ ${d.scheduled}</div>
         </div>
         <div class="tile-label">已到班</div>
