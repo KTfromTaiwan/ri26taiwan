@@ -102,18 +102,19 @@ body::before {
 
 /* ── KPI row ── */
 .kpi-row { display: grid; grid-template-columns: repeat(2,1fr); gap: 8px; margin-bottom: 18px; }
-.kpi { background: var(--card); border: 1px solid var(--border); border-radius: var(--r); padding: 13px 14px; }
+.kpi { background: var(--card); border: 1px solid var(--border); border-radius: var(--r); padding: 14px 16px; display: flex; align-items: center; gap: 12px; }
 .kpi.green  { border-color: rgba(74,222,128,.3); }
 .kpi.yellow { border-color: rgba(217,119,6,.25); }
 .kpi.red    { border-color: rgba(248,113,113,.25); }
 .kpi.blue   { border-color: rgba(96,165,250,.25); }
-.kpi-n { font-family: 'DM Mono', monospace; font-size: 32px; font-weight: 300; line-height: 1; letter-spacing: -2px; }
+.kpi-n { font-family: 'DM Mono', monospace; font-size: 48px; font-weight: 300; line-height: 1; letter-spacing: -3px; flex-shrink: 0; }
 .kpi.green  .kpi-n { color: var(--accent); }
 .kpi.yellow .kpi-n { color: var(--warn);   }
 .kpi.red    .kpi-n { color: var(--err);    }
 .kpi.blue   .kpi-n { color: var(--blue);   }
-.kpi-lbl { font-size: 11px; color: var(--muted); margin-top: 4px; letter-spacing: .04em; }
-.kpi-sub { font-size: 10px; font-family: 'DM Mono', monospace; color: var(--dim); margin-top: 2px; }
+.kpi-info { display: flex; flex-direction: column; gap: 4px; }
+.kpi-lbl { font-size: 13px; color: var(--muted); letter-spacing: .04em; }
+.kpi-sub { font-size: 11px; font-family: 'DM Mono', monospace; color: var(--dim); }
 
 /* ── Section label ── */
 .sec { font-size: 10px; font-family: 'DM Mono', monospace; letter-spacing: .18em; color: var(--muted); text-transform: uppercase; margin-bottom: 8px; margin-top: 4px; }
@@ -186,10 +187,10 @@ body::before {
   </div>
 
   <div class="kpi-row" id="kpiRow" style="display:none">
-    <div class="kpi blue" ><div class="kpi-n" id="k0">—</div><div class="kpi-lbl">排班人數</div><div class="kpi-sub" id="k0s"></div></div>
-    <div class="kpi green"><div class="kpi-n" id="k1">—</div><div class="kpi-lbl">已到班</div><div class="kpi-sub" id="k1s">—</div></div>
-    <div class="kpi yellow"><div class="kpi-n" id="k2">—</div><div class="kpi-lbl">打卡失敗</div></div>
-    <div class="kpi red"  ><div class="kpi-n" id="k3">—</div><div class="kpi-lbl">缺席</div></div>
+    <div class="kpi blue" ><div class="kpi-n" id="k0">—</div><div class="kpi-info"><div class="kpi-lbl">排班人數</div><div class="kpi-sub" id="k0s"></div></div></div>
+    <div class="kpi green"><div class="kpi-n" id="k1">—</div><div class="kpi-info"><div class="kpi-lbl">已到班</div><div class="kpi-sub" id="k1s">—</div></div></div>
+    <div class="kpi yellow"><div class="kpi-n" id="k2">—</div><div class="kpi-info"><div class="kpi-lbl">打卡失敗</div></div></div>
+    <div class="kpi red"  ><div class="kpi-n" id="k3">—</div><div class="kpi-info"><div class="kpi-lbl">缺席</div></div></div>
   </div>
 
   <div class="sec" id="secPeople" style="display:none">需關注人員</div>
