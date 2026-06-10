@@ -175,7 +175,7 @@ body::before {
   <div class="brand">Chekcin System</div>
   <div style="display:flex;align-items:center;margin-bottom:22px">
     <div class="headline" style="margin-bottom:0">出勤 <span>Dashboard</span></div>
-    <button class="btn-refresh" onclick="loadSummary()" title="重新整理">
+    <button class="btn-refresh" onclick="refreshToday()" title="重新整理今天">
       <svg viewBox="0 0 24 24"><path d="M4 12a8 8 0 0 1 14.93-4M20 12a8 8 0 0 1-14.93 4"/><polyline points="20 4 20 8 16 8"/><polyline points="4 20 4 16 8 16"/></svg>
     </button>
   </div>
@@ -307,7 +307,8 @@ function renderSummary(days) {
       if (d.pending      > 0) chips += '<span class="chip chip-blue">待打卡 '  + d.pending      + '</span>';
     }
 
-    html += `<div class="tile ${cls}" onclick="loadDetail('${d.date}')">
+    const tileId = isToday ? ' id="tile-today"' : '';
+    html += `<div${tileId} class="tile ${cls}" onclick="loadDetail('${d.date}')">
       <div class="tile-date-row">
         <div class="tile-date">${fmtMD(d.date)}</div>
         <div class="tile-dow">${getDow(d.date)}</div>
@@ -325,6 +326,46 @@ function renderSummary(days) {
   });
   html += '</div>';
   document.getElementById('summaryContent').innerHTML = html;
+}
+
+// ── Refresh today tile only ────────────────────────────
+async function refreshToday() {
+  const tile = document.getElementById('tile-today');
+  if (!tile) { loadSummary(); return; }  // 今天沒有班表，退回完整重整
+
+  // 在 tile 上顯示小 spinner
+  const chipsEl = tile.querySelector('.tile-chips');
+  const origChips = chipsEl ? chipsEl.innerHTML : '';
+  if (chipsEl) chipsEl.innerHTML = '<span class="spin" style="font-size:14px">⟳</span>';
+
+  try {
+    const r = await fetch(GAS + '?action=getDashboard&date=' + todayStr() + '&t=' + Date.now());
+    const j = await r.json();
+    const s = j.result && j.result.summary;
+    if (!s) throw new Error('no summary');
+
+    const d = { date: todayStr(), present: s.present, scheduled: s.scheduled,
+                absent: s.absent, punch_failed: s.punch_failed, pending: s.pending };
+    const hasIssue = d.absent > 0 || d.punch_failed > 0;
+    const allOk    = d.present === d.scheduled && !d.pending && !hasIssue;
+    const numGreen = allOk ? ' green' : '';
+
+    let chips = '';
+    if (allOk) {
+      chips = '<span class="chip chip-ok">全員到班</span>';
+    } else {
+      if (d.absent       > 0) chips += '<span class="chip chip-red">缺席 '    + d.absent       + '</span>';
+      if (d.punch_failed > 0) chips += '<span class="chip chip-amb">失敗 '    + d.punch_failed + '</span>';
+      if (d.pending      > 0) chips += '<span class="chip chip-blue">待打卡 ' + d.pending      + '</span>';
+    }
+
+    tile.querySelector('.tile-num').className = 'tile-num' + numGreen;
+    tile.querySelector('.tile-num').textContent = d.present;
+    tile.querySelector('.tile-denom').textContent = '/ ' + d.scheduled;
+    if (chipsEl) chipsEl.innerHTML = chips;
+  } catch(e) {
+    if (chipsEl) chipsEl.innerHTML = origChips;
+  }
 }
 
 // ── Detail ─────────────────────────────────────────────
