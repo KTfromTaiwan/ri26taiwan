@@ -133,6 +133,7 @@ body::before {
 .pphone { display: inline-flex; align-items: center; gap: 3px; font-family: 'DM Mono', monospace; font-size: 10px; color: var(--accent); background: rgba(74,222,128,.08); border: 1px solid rgba(74,222,128,.2); border-radius: 20px; padding: 1px 7px; text-decoration: none; flex-shrink: 0; }
 .pphone svg { width: 10px; height: 10px; stroke: var(--accent); fill: none; stroke-width: 2; }
 .pmeta { font-size: 11px; color: var(--muted); margin-top: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.pmeta-warn { font-size: 11px; color: var(--warn); margin-top: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .pbadge { font-size: 10px; font-family: 'DM Mono', monospace; padding: 2px 7px; border-radius: 20px; flex-shrink: 0; }
 .pbadge.ok       { background: rgba(74,222,128,.1);  color: var(--accent); }
 .pbadge.fail     { background: rgba(217,119,6,.1);   color: var(--warn);   }
@@ -386,16 +387,18 @@ function buildPersonRow(s) {
 
   // 上班徽章（🕘）
   const inBadgeCls = {present:'ok', failed:'fail', absent:'abs', pending:'pend'}[s.status] || 'abs';
-  const inLabel    = {present:'🕘 到班', failed:'🕘 失敗', absent:'🕘 缺席', pending:'🕘 待打卡'}[s.status] || '🕘 —';
+  const inLabel    = {present:'☀️ 到班', failed:'☀️ 失敗', absent:'☀️ 缺席', pending:'☀️ 待打卡'}[s.status] || '🕘 —';
 
   // 下班徽章（🌅）
   const outBadgeCls = {ok:'out-ok', failed:'out-fail', absent:'out-abs', pending:'out-pend'}[s.out_status] || 'out-abs';
-  const outLabel    = {ok:'🌅 下班', failed:'🌅 下班失敗', absent:'🌅 未下班', pending:'🌅 待打卡'}[s.out_status] || '🌅 —';
+  const outLabel    = {ok:'🌙 下班', failed:'🌙 下班失敗', absent:'🌙 未下班', pending:'🌙 待打卡'}[s.out_status] || '🌙 —';
 
   const metaParts = [s.group, s.venue ? '📍 ' + s.venue : ''].filter(Boolean);
-  if (s.fail_reason)     metaParts.push('⚠ ' + s.fail_reason);
-  if (s.out_fail_reason) metaParts.push('⚠ 下班・' + s.out_fail_reason);
-  const meta = metaParts.join('・');
+  const meta      = metaParts.join('・');
+  const warnParts = [];
+  if (s.fail_reason)     warnParts.push('⚠ ' + s.fail_reason);
+  if (s.out_fail_reason) warnParts.push('⚠ 下班・' + s.out_fail_reason);
+  const warnHtml  = warnParts.map(w => `<div class="pmeta-warn">${w}</div>`).join('');
 
   const inTimeHtml  = s.in_time  ? '<div class="ppunch">' + s.in_time  + '</div>' : '';
   const outTimeHtml = s.out_time ? '<div class="ppunch">' + s.out_time + '</div>' : '';
@@ -409,6 +412,7 @@ function buildPersonRow(s) {
     <div class="pinfo">
       <div class="pname-row"><span class="pname">${s.name}</span>${phoneHtml}</div>
       <div class="pmeta">${meta}</div>
+      ${warnHtml}
     </div>
     <div style="text-align:right;flex-shrink:0">
       <div class="pbadge ${inBadgeCls}">${inLabel}</div>
