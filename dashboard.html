@@ -223,7 +223,7 @@ body::before {
 </div>
 
 <script>
-const GAS  = 'https://script.google.com/macros/s/AKfycbwnB9MZDha7_ZFNilWcEJIxe6XHhsQWSOEPQZVs4iX9OmrZdjx9N3Yckxj_ZpjGe33S6A/exec';
+const GAS  = 'https://script.google.com/macros/s/AKfycbwb__SQAEpdr2FWCjC9K0gMwXiLihflGdFDoSi5NorGm07Z0wIj5hl9oXIhbXjE7t0A7w/exec';
 const DOW  = ['日','一','二','三','四','五','六'];
 
 let currentDate   = '';
@@ -393,7 +393,8 @@ function buildPersonRow(s) {
   const outBadgeCls = {ok:'out-ok', failed:'out-fail', absent:'out-abs', pending:'out-pend'}[s.out_status] || 'out-abs';
   const outLabel    = {ok:'🌙 下班', failed:'🌙 下班失敗', absent:'🌙 未下班', pending:'🌙 待打卡'}[s.out_status] || '🌙 —';
 
-  const metaParts = [s.group, s.venue ? '📍 ' + s.venue : ''].filter(Boolean);
+  const venueLabel = s.mobility ? '⚡ 機動' : (s.venue ? '📍 ' + s.venue : '');
+  const metaParts = [s.group, venueLabel].filter(Boolean);
   const meta      = metaParts.join('・');
   const warnParts = [];
   if (s.fail_reason)     warnParts.push('⚠ ' + s.fail_reason);
