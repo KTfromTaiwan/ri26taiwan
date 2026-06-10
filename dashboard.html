@@ -253,8 +253,10 @@ function showDetailView() {
 
 // ── Summary ────────────────────────────────────────────
 async function loadSummary() {
+  document.getElementById('summaryContent').innerHTML =
+    '<div class="loader"><span class="spin">⟳</span> 載入中…</div>';
   try {
-    const r = await fetch(GAS + '?action=getWeekSummary');
+    const r = await fetch(GAS + '?action=getWeekSummary&t=' + Date.now());
     const j = await r.json();
     renderSummary(j.result);
   } catch(e) {
