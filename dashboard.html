@@ -90,6 +90,33 @@ body::before {
 .tf-label{ font-size: 11px; color: #3d4a5c; letter-spacing: .04em; margin-top: -4px; }
 .tf-lock { font-size: 10px; color: #3d4a5c; font-family: 'DM Mono', monospace; padding: 2px 8px; border-radius: 20px; border: 1px solid #2a3448; display: inline-block; }
 
+/* ── Hero tile (today) ── */
+.tile-hero {
+  background: #131d19; border: 1px solid rgba(74,222,128,.4);
+  border-radius: 20px; padding: 22px 20px 18px;
+  cursor: pointer; display: flex; flex-direction: column; gap: 12px;
+  margin-bottom: 4px; transition: border-color .15s;
+}
+.tile-hero:active { opacity: .85; }
+.tile-hero .tile-date  { font-size: 22px; color: var(--accent); }
+.tile-hero .tile-num   { font-size: 72px; color: var(--accent); letter-spacing: -5px; }
+.tile-hero .tile-denom { font-size: 20px; }
+
+/* ── Compact past tiles ── */
+.tile-compact {
+  background: var(--card); border: 1px solid var(--border);
+  border-radius: 16px; padding: 12px 12px 10px;
+  cursor: pointer; display: flex; flex-direction: column; gap: 7px;
+  transition: border-color .15s;
+}
+.tile-compact:active { opacity: .85; }
+.tile-compact.has-issue { border-color: rgba(248,113,113,.3); background: #1a1414; }
+.tile-compact .tile-date  { font-size: 15px; }
+.tile-compact .tile-num   { font-size: 40px; letter-spacing: -2px; }
+.tile-compact .tile-denom { font-size: 13px; }
+.tile-compact .tile-label { font-size: 10px; }
+.tile-compact .chip       { font-size: 9px; padding: 1px 5px; }
+
 /* ── Back bar ── */
 .back-bar { display: flex; align-items: center; gap: 10px; margin-bottom: 18px; }
 .btn-back { font-family: 'DM Mono', monospace; font-size: 13px; color: var(--accent); background: rgba(74,222,128,.1); border: 1px solid rgba(74,222,128,.25); border-radius: 20px; padding: 5px 13px; cursor: pointer; transition: background .15s; white-space: nowrap; }
@@ -266,6 +293,74 @@ async function loadSummary() {
   }
 }
 
+// ── Chip builder ───────────────────────────────────────
+function buildChips(d) {
+  const hasIssue = d.absent > 0 || d.punch_failed > 0;
+  const allOk    = d.present === d.scheduled && !d.pending && !hasIssue;
+  let chips = '';
+  if (allOk) {
+    chips = '<span class="chip chip-ok">全員到班</span>';
+  } else {
+    if (d.absent       > 0) chips += '<span class="chip chip-red">缺席 '    + d.absent       + '</span>';
+    if (d.punch_failed > 0) chips += '<span class="chip chip-amb">失敗 '    + d.punch_failed + '</span>';
+    if (d.pending      > 0) chips += '<span class="chip chip-blue">待打卡 ' + d.pending      + '</span>';
+  }
+  return { chips, allOk, hasIssue };
+}
+
+function renderHeroTile(d) {
+  const { chips, allOk } = buildChips(d);
+  const numGreen = allOk ? ' green' : '';
+  return `<div id="tile-today" class="tile-hero" onclick="loadDetail('${d.date}')">
+    <div class="tile-date-row">
+      <div class="tile-date">${fmtMD(d.date)}</div>
+      <div class="tile-dow">${getDow(d.date)}</div>
+      <span class="today-tag">今天</span>
+    </div>
+    <div>
+      <div class="tile-num-wrap">
+        <div class="tile-num${numGreen}">${d.present}</div>
+        <div class="tile-denom">/ ${d.scheduled}</div>
+      </div>
+      <div class="tile-label">已到班</div>
+    </div>
+    <div class="tile-chips">${chips}</div>
+  </div>`;
+}
+
+function renderCompactTile(d) {
+  const { chips, hasIssue } = buildChips(d);
+  const cls = hasIssue ? 'has-issue' : '';
+  return `<div class="tile-compact ${cls}" onclick="loadDetail('${d.date}')">
+    <div class="tile-date-row">
+      <div class="tile-date">${fmtMD(d.date)}</div>
+      <div class="tile-dow">${getDow(d.date)}</div>
+    </div>
+    <div>
+      <div class="tile-num-wrap">
+        <div class="tile-num">${d.present}</div>
+        <div class="tile-denom">/ ${d.scheduled}</div>
+      </div>
+      <div class="tile-label">已到班</div>
+    </div>
+    <div class="tile-chips">${chips}</div>
+  </div>`;
+}
+
+function renderFutureTile(d) {
+  return `<div class="tile-future">
+    <div class="tile-date-row">
+      <div class="tf-date">${fmtMD(d.date)}</div>
+      <div class="tf-dow">${getDow(d.date)}</div>
+    </div>
+    <div>
+      <div class="tile-num-wrap"><div class="tf-num">${d.scheduled || '—'}</div></div>
+      <div class="tf-label">排班人數</div>
+    </div>
+    <div><span class="tf-lock">尚未開始</span></div>
+  </div>`;
+}
+
 function renderSummary(days) {
   if (!days || !days.length) {
     document.getElementById('summaryContent').innerHTML =
@@ -273,59 +368,34 @@ function renderSummary(days) {
     return;
   }
   const today = todayStr();
-  let html = '<div class="tile-grid">';
-  days.forEach(d => {
-    const isToday  = d.date === today;
 
-    // ── 未來灰階 tile ──
-    if (d.future) {
-      html += `<div class="tile-future">
-        <div class="tile-date-row">
-          <div class="tf-date">${fmtMD(d.date)}</div>
-          <div class="tf-dow">${getDow(d.date)}</div>
-        </div>
-        <div>
-          <div class="tile-num-wrap"><div class="tf-num">—</div></div>
-          <div class="tf-label">已到班</div>
-        </div>
-        <div><span class="tf-lock">尚未開始</span></div>
-      </div>`;
-      return;
-    }
+  const todayData  = days.find(d => d.date === today && !d.future);
+  const pastDays   = days.filter(d => d.date < today && !d.future).reverse(); // newest first
+  const futureDays = days.filter(d => d.future);
 
-    // ── 過去 / 今天 active tile ──
-    const hasIssue = d.absent > 0 || d.punch_failed > 0;
-    const allOk    = d.present === d.scheduled && !d.pending && !hasIssue;
-    const cls      = isToday ? 'today' : hasIssue ? 'has-issue' : '';
-    const numGreen = allOk ? ' green' : '';
+  let html = '';
 
-    let chips = '';
-    if (allOk) {
-      chips = '<span class="chip chip-ok">全員到班</span>';
-    } else {
-      if (d.absent       > 0) chips += '<span class="chip chip-red">缺席 '     + d.absent       + '</span>';
-      if (d.punch_failed > 0) chips += '<span class="chip chip-amb">失敗 '     + d.punch_failed + '</span>';
-      if (d.pending      > 0) chips += '<span class="chip chip-blue">待打卡 '  + d.pending      + '</span>';
-    }
+  // ── Today hero ──
+  if (todayData) html += renderHeroTile(todayData);
 
-    const tileId = isToday ? ' id="tile-today"' : '';
-    html += `<div${tileId} class="tile ${cls}" onclick="loadDetail('${d.date}')">
-      <div class="tile-date-row">
-        <div class="tile-date">${fmtMD(d.date)}</div>
-        <div class="tile-dow">${getDow(d.date)}</div>
-        ${isToday ? '<span class="today-tag">今天</span>' : ''}
-      </div>
-      <div>
-        <div class="tile-num-wrap">
-          <div class="tile-num${numGreen}">${d.present}</div>
-          <div class="tile-denom">/ ${d.scheduled}</div>
-        </div>
-        <div class="tile-label">已到班</div>
-      </div>
-      <div class="tile-chips">${chips}</div>
-    </div>`;
-  });
-  html += '</div>';
+  // ── Past dates ──
+  if (pastDays.length) {
+    html += '<div class="sec" style="margin-top:18px">過去紀錄</div>';
+    html += '<div class="tile-grid">';
+    pastDays.forEach(d => { html += renderCompactTile(d); });
+    html += '</div>';
+  }
+
+  // ── Future dates ──
+  if (futureDays.length) {
+    html += '<div class="sec" style="margin-top:18px">即將上班</div>';
+    html += '<div class="tile-grid">';
+    futureDays.forEach(d => { html += renderFutureTile(d); });
+    html += '</div>';
+  }
+
+  if (!html) html = '<div class="loader">班表尚無資料。</div>';
+
   document.getElementById('summaryContent').innerHTML = html;
 }
 
