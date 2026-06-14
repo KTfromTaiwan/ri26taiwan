@@ -129,6 +129,7 @@ body::before {
 .pdot.pend { background: var(--blue); }
 .pinfo { flex: 1; min-width: 0; }
 .pname-row { display: flex; align-items: center; gap: 7px; }
+.pid   { font-size: 10px; font-family: 'DM Mono', monospace; color: var(--muted); flex-shrink: 0; }
 .pname { font-size: 13px; font-weight: 700; color: var(--text); white-space: nowrap; }
 .pphone { display: inline-flex; align-items: center; gap: 3px; font-family: 'DM Mono', monospace; font-size: 10px; color: var(--accent); background: rgba(74,222,128,.08); border: 1px solid rgba(74,222,128,.2); border-radius: 20px; padding: 1px 7px; text-decoration: none; flex-shrink: 0; }
 .pphone svg { width: 10px; height: 10px; stroke: var(--accent); fill: none; stroke-width: 2; }
@@ -454,7 +455,7 @@ function buildPersonRow(s) {
   return `<div class="prow">
     <div class="pdot ${dotCls}"></div>
     <div class="pinfo">
-      <div class="pname-row"><span class="pname">${s.name}</span>${phoneHtml}</div>
+      <div class="pname-row"><span class="pid">#${s.staff_id}</span><span class="pname">${s.name}</span>${phoneHtml}</div>
       <div class="pmeta">${meta}</div>
       ${warnHtml}
     </div>
