@@ -287,6 +287,9 @@ textarea.dnote.req-err{border-color:var(--err);}
         <div class="id-name" id="id-name">王小明</div>
         <div class="id-sub">****-****-3456 · RI26 展覽</div>
       </div>
+      <button id="btn-refresh" onclick="doRefresh()" title="重新載入" style="background:none;border:none;cursor:pointer;padding:6px;color:var(--muted);display:flex;align-items:center;margin-left:auto;">
+        <svg id="refresh-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:20px;height:20px;"><path d="M23 4v6h-6"/><path d="M1 20v-6h6"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>
+      </button>
     </div>
 
     <div class="stat-grid" id="stat-grid">
@@ -407,10 +410,30 @@ const state = {};
 let apiShifts = [];
 let activeId = null;
 let currentName = '';
+let currentPhone = '';
 const disputeData = {};
 const DATA = { special: 0, meal: 0, transport: 0 };
 
-const API_URL = 'https://script.google.com/macros/s/AKfycbzbyZqLRNJ3ikHRfrIjaSXHpmP4TtgieFVevkgeBwpn49uvNfkdY7hLYJuH2_8vJsxPmw/exec';
+const API_URL = 'https://script.google.com/macros/s/AKfycbxlaU2tOf7lI1VgMA5QSSx4ZoqBrOzYGSibmTsNywJb2rxrgomKb6KLO4J4cifQYj5oJQ/exec';
+
+/* ── 特殊時數計算（23:00–07:59，取整數小時） ── */
+function calcSpecial(start, end) {
+  if (!start || !end) return 0;
+  const toMin = t => { const [h, m] = t.split(':').map(Number); return h * 60 + m; };
+  const s = toMin(start), e = toMin(end);
+
+  // 計算 [a,b) 範圍內落在特殊時段 [0,480) 或 [1380,1440) 的分鐘數
+  function specialInRange(a, b) {
+    const m1 = Math.max(0, Math.min(b, 480)  - Math.max(a, 0));    // 00:00–07:59
+    const m2 = Math.max(0, Math.min(b, 1440) - Math.max(a, 1380)); // 23:00–23:59
+    return m1 + m2;
+  }
+
+  const mins = e > s
+    ? specialInRange(s, e)                        // 當日班
+    : specialInRange(s, 1440) + specialInRange(0, e); // 跨日班
+  return Math.round(mins / 60);
+}
 
 function showView(id) {
   document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
@@ -419,6 +442,32 @@ function showView(id) {
   window.scrollTo(0, 0);
 }
 function goLogin() { showView('v-login'); }
+
+/* ── Refresh ── */
+function doRefresh() {
+  if (!currentName || !currentPhone) return;
+  const btn  = document.getElementById('btn-refresh');
+  const icon = document.getElementById('refresh-icon');
+  btn.disabled = true;
+  icon.style.animation = 'spin 0.8s linear infinite';
+
+  fetch(`${API_URL}?name=${encodeURIComponent(currentName)}&phone=${encodeURIComponent(currentPhone)}&t=${Date.now()}`)
+    .then(r => r.json())
+    .then(data => {
+      btn.disabled = false;
+      icon.style.animation = '';
+      if (!data.ok) return;
+      apiShifts = data.shifts;
+      // 清空舊的 dispute 狀態再重建
+      for (const k of Object.keys(disputeData)) delete disputeData[k];
+      initShifts(data.shifts);
+      refreshStats();
+    })
+    .catch(() => {
+      btn.disabled = false;
+      icon.style.animation = '';
+    });
+}
 
 /* ── Login ── */
 function doLogin() {
@@ -443,8 +492,9 @@ function doLogin() {
           : '發生錯誤，請稍後再試。';
         err.classList.add('show'); return;
       }
-      currentName = data.name;
-      apiShifts   = data.shifts;
+      currentName  = data.name;
+      currentPhone = phone;
+      apiShifts    = data.shifts;
       initShifts(data.shifts);
       showView('v-hours');
       refreshStats();
@@ -462,6 +512,9 @@ function initShifts(shifts) {
   // reset state
   for (const k of Object.keys(state)) delete state[k];
   shifts.forEach((sh, i) => { state[i + 1] = sh.status || 'p'; });
+
+  // 特殊時數由前端計算（覆蓋 sheet 值）
+  shifts.forEach(sh => { sh.special = calcSpecial(sh.actualStart, sh.actualEnd); });
 
   // compute totals for tiles / modal
   DATA.special   = shifts.reduce((s, sh) => s + (sh.special || 0), 0);
