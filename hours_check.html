@@ -1,0 +1,758 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, maximum-scale=1">
+<title>Chekcin 時數查詢</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700;900&family=DM+Mono:wght@300;400;500&display=swap">
+<style>
+:root {
+  --bg:          #0d0f14;
+  --surface:     #151820;
+  --card:        #161b27;
+  --border:      #1f2535;
+  --accent:      #4ade80;
+  --accent-dim:  rgba(74,222,128,.12);
+  --accent-glow: rgba(74,222,128,.28);
+  --warn:        #f59e0b;
+  --warn-dim:    rgba(245,158,11,.12);
+  --err:         #f87171;
+  --err-dim:     rgba(248,113,113,.10);
+  --blue:        #60a5fa;
+  --text:        #e8eaf2;
+  --muted:       #6b7280;
+  --dim:         #374151;
+  --dimmer:      #252d3d;
+  --r:           16px;
+}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;}
+html,body{
+  min-height:100%;background:var(--bg);color:var(--text);
+  font-family:'Noto Sans TC',-apple-system,'PingFang TC','Microsoft JhengHei',sans-serif;
+  -webkit-font-smoothing:antialiased;overflow-x:hidden;
+}
+body::before{
+  content:'';position:fixed;inset:0;
+  background-image:
+    linear-gradient(rgba(74,222,128,.025) 1px,transparent 1px),
+    linear-gradient(90deg,rgba(74,222,128,.025) 1px,transparent 1px);
+  background-size:40px 40px;pointer-events:none;z-index:0;
+}
+
+/* ── Layout ── */
+.view{position:relative;z-index:1;min-height:100vh;padding:36px 16px 160px;display:none;}
+.view.active{display:block;}
+.inner{max-width:480px;margin:0 auto;}
+
+/* ── Brand ── */
+.brand{font-size:10px;letter-spacing:.22em;color:var(--dim);text-transform:uppercase;font-family:'DM Mono',monospace;margin-bottom:4px;}
+.headline{font-size:24px;font-weight:900;letter-spacing:-.5px;margin-bottom:6px;}
+.headline span{color:var(--accent);}
+.subline{font-size:13px;color:var(--muted);margin-bottom:24px;line-height:1.5;}
+
+/* ── Card ── */
+.card{background:var(--card);border:1px solid var(--border);border-radius:var(--r);padding:20px;margin-bottom:14px;}
+.card-title{font-size:11px;font-family:'DM Mono',monospace;letter-spacing:.18em;color:var(--muted);text-transform:uppercase;margin-bottom:16px;}
+
+/* ── Inputs ── */
+label{display:block;font-size:11px;font-family:'DM Mono',monospace;letter-spacing:.15em;color:var(--muted);text-transform:uppercase;margin-bottom:9px;}
+input[type="text"],input[type="tel"]{
+  width:100%;padding:13px 14px;font-size:16px;font-family:'Noto Sans TC',sans-serif;
+  border:1px solid var(--border);border-radius:10px;background:var(--surface);color:var(--text);
+  outline:none;transition:border-color .2s;margin-bottom:16px;
+}
+input[type="text"]:focus,input[type="tel"]:focus{border-color:var(--accent);}
+input[type="tel"]{text-align:center;letter-spacing:10px;font-size:26px;font-family:'DM Mono',monospace;}
+.hint{font-size:12px;color:var(--muted);margin-top:-10px;margin-bottom:16px;line-height:1.5;}
+.err-inline{color:var(--err);font-size:13px;margin-top:8px;display:none;}
+.err-inline.show{display:block;}
+
+/* ── Buttons ── */
+.btn-primary{
+  width:100%;padding:16px 12px;font-size:17px;font-weight:700;border:none;
+  border-radius:var(--r);background:var(--accent);color:#0d0f14;
+  box-shadow:0 0 20px var(--accent-glow);cursor:pointer;
+  transition:transform .12s;letter-spacing:.5px;font-family:'Noto Sans TC',sans-serif;
+}
+.btn-primary:active{transform:scale(.97);}
+.btn-primary:disabled{background:var(--dim);color:var(--muted);box-shadow:none;cursor:not-allowed;}
+.btn-ghost{
+  background:transparent;border:1px solid var(--border);border-radius:10px;
+  color:var(--muted);font-size:14px;padding:11px 16px;cursor:pointer;
+  font-family:'Noto Sans TC',sans-serif;width:100%;
+}
+.btn-row{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
+
+/* ── Open window banner ── */
+.window-banner{
+  background:rgba(74,222,128,.07);border:1px solid rgba(74,222,128,.2);
+  border-radius:12px;padding:11px 14px;margin-bottom:20px;
+  display:flex;align-items:center;gap:10px;
+}
+.window-dot{width:7px;height:7px;border-radius:50%;background:var(--accent);flex-shrink:0;
+  box-shadow:0 0 8px var(--accent-glow);animation:pulse 2s infinite;}
+@keyframes pulse{0%,100%{opacity:1;}50%{opacity:.35;}}
+.window-text{font-size:12px;color:var(--accent);font-family:'DM Mono',monospace;line-height:1.5;}
+
+/* ── Identity bar ── */
+.id-bar{
+  display:flex;align-items:center;gap:12px;
+  background:var(--card);border:1px solid var(--border);border-radius:12px;
+  padding:13px 16px;margin-bottom:14px;
+}
+.id-name{font-size:15px;font-weight:700;}
+.id-sub{font-size:11px;color:var(--muted);font-family:'DM Mono',monospace;margin-top:2px;}
+
+/* ── Summary tiles ── */
+.stat-grid{display:flex;gap:6px;margin-bottom:14px;}
+.stat-tile{flex:1;min-width:0;background:var(--card);border:1px solid var(--border);border-radius:12px;padding:12px 6px;text-align:center;}
+.stat-tile.hidden{display:none!important;}
+/* single tile: show count on right */
+.stat-grid.cols-1 .stat-tile{display:flex;align-items:center;justify-content:space-between;text-align:left;padding:12px 16px;}
+.stat-grid.cols-1 .stat-note{font-size:12px;font-family:'DM Mono',monospace;color:var(--dim);}
+.stat-num{font-family:'DM Mono',monospace;font-size:22px;font-weight:500;line-height:1;}
+.stat-num.green{color:var(--accent);}
+.stat-num.amber{color:var(--warn);}
+.stat-num.purple{color:#a78bfa;}
+.stat-num.sky{color:#38bdf8;}
+.stat-label{font-size:11px;color:var(--muted);margin-top:5px;letter-spacing:.02em;}
+
+/* ── Progress (in sticky bar) ── */
+.progress-track{height:3px;background:var(--border);border-radius:4px;overflow:hidden;margin-bottom:10px;}
+.progress-fill{height:100%;background:var(--accent);border-radius:4px;transition:width .35s;}
+
+/* ══════════════════════════════════
+   SHIFT LIST CARD
+══════════════════════════════════ */
+.shift-list{background:var(--card);border:1px solid var(--border);border-radius:var(--r);overflow:hidden;margin-bottom:14px;}
+
+.shift-row{display:flex;align-items:center;gap:16px;padding:16px 16px;transition:background .15s;}
+.shift-row.s-confirmed{background:#0c2e1c;border-left:3px solid rgba(74,222,128,.5);}
+.shift-row.s-disputed {background:#2c1510;border-left:3px solid rgba(248,113,113,.5);}
+
+.shift-sep{border:none;border-top:1px solid var(--border);margin:0;}
+
+/* date col */
+.s-date{flex-shrink:0;width:50px;}
+.s-datenum{font-family:'DM Mono',monospace;font-size:26px;font-weight:500;color:var(--text);line-height:1;letter-spacing:-.5px;}
+.s-dow{font-family:'DM Mono',monospace;font-size:10px;color:#4b5563;letter-spacing:.06em;margin-top:3px;}
+
+/* body */
+.s-body{flex:1;min-width:0;}
+.s-top{border-left:2px solid #374151;padding-left:8px;margin-bottom:8px;}
+.s-venue{font-size:15px;font-weight:700;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;display:block;line-height:1.2;}
+.s-sched{font-family:'DM Mono',monospace;font-size:12px;color:var(--muted);display:block;margin-top:2px;letter-spacing:.02em;}
+.s-actual-wrap{border-left:2px solid rgba(74,222,128,.4);padding-left:8px;margin-bottom:6px;}
+.s-actual-lbl{font-size:10px;color:#4b5563;letter-spacing:.03em;margin-bottom:1px;}
+.s-actual{font-family:'DM Mono',monospace;font-size:13px;color:var(--accent);}
+.s-chips{display:flex;gap:4px;flex-wrap:wrap;}
+.chip{font-size:12px;font-family:'DM Mono',monospace;padding:3px 8px;border-radius:20px;}
+.cn{background:rgba(74,222,128,.10);color:var(--accent);border:1px solid rgba(74,222,128,.2);}
+.cs{background:rgba(245,158,11,.12);color:var(--warn);border:1px solid rgba(245,158,11,.25);}
+.ct{background:rgba(96,165,250,.10);color:var(--blue);border:1px solid rgba(96,165,250,.2);}
+.cm{background:rgba(167,139,250,.10);color:#a78bfa;border:1px solid rgba(167,139,250,.2);}
+.cb{background:rgba(56,189,248,.10);color:#38bdf8;border:1px solid rgba(56,189,248,.2);}
+
+/* action pills — B scheme: pre-tinted default */
+.s-acts{display:flex;flex-direction:column;gap:10px;flex-shrink:0;}
+.s-pill-ok{
+  display:flex;align-items:center;gap:4px;padding:8px 14px;
+  border-radius:20px;border:1px solid rgba(74,222,128,.22);background:transparent;
+  cursor:pointer;white-space:nowrap;
+  font-size:13px;font-weight:700;font-family:'Noto Sans TC',sans-serif;
+  color:rgba(74,222,128,.45);transition:border-color .12s,color .12s,background .12s;
+}
+.s-pill-ok svg{width:13px;height:13px;flex-shrink:0;fill:none;stroke:currentColor;stroke-width:2.5;stroke-linecap:round;stroke-linejoin:round;}
+.s-pill-ok.ac{border-color:rgba(74,222,128,.55);color:var(--accent);background:rgba(74,222,128,.1);}
+.s-pill-flag{
+  display:flex;align-items:center;gap:4px;padding:8px 14px;
+  border-radius:20px;border:1px solid rgba(248,113,113,.18);background:transparent;
+  cursor:pointer;white-space:nowrap;
+  font-size:13px;font-weight:700;font-family:'Noto Sans TC',sans-serif;
+  color:rgba(248,113,113,.38);transition:border-color .12s,color .12s,background .12s;
+}
+.s-pill-flag svg{width:11px;height:11px;flex-shrink:0;fill:none;stroke:currentColor;stroke-width:2.5;stroke-linecap:round;stroke-linejoin:round;}
+.s-pill-flag.ad{border-color:rgba(248,113,113,.5);color:var(--err);background:rgba(248,113,113,.09);}
+
+/* ── Sticky submit bar ── */
+.sticky-bar{
+  position:fixed;bottom:0;left:0;right:0;z-index:100;
+  background:rgba(13,15,20,.93);backdrop-filter:blur(20px);
+  border-top:1px solid var(--border);
+  padding:12px 16px max(12px,env(safe-area-inset-bottom));
+}
+.sticky-inner{max-width:480px;margin:0 auto;}
+.sticky-hint{font-size:11px;color:var(--muted);text-align:center;margin-bottom:10px;min-height:16px;}
+.sticky-hint b{color:var(--text);}
+
+/* ── Dispute modal ── */
+.modal{position:fixed;inset:0;background:rgba(0,0,0,.82);z-index:200;display:flex;align-items:flex-end;justify-content:center;}
+.modal.hidden{display:none;}
+.modal-sheet{
+  background:var(--card);border:1px solid var(--border);
+  border-radius:var(--r) var(--r) 0 0;
+  padding:20px 20px 36px;max-width:480px;width:100%;
+  max-height:85vh;overflow-y:auto;
+}
+.modal-handle{width:32px;height:3px;background:var(--border);border-radius:2px;margin:0 auto 18px;}
+.modal-title{font-size:17px;font-weight:900;margin-bottom:4px;}
+.modal-ref{
+  background:var(--surface);border:1px solid var(--border);border-radius:10px;
+  padding:12px 14px;margin:12px 0 16px;
+  font-size:15px;font-family:'DM Mono',monospace;color:var(--muted);line-height:1.6;
+}
+.modal-ref b{color:var(--text);display:block;font-size:16px;margin-bottom:3px;}
+
+.reason-grid{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:14px;}
+.reason-btn{
+  padding:11px 8px;font-size:16px;border:1px solid var(--border);
+  border-radius:10px;background:transparent;color:var(--muted);
+  cursor:pointer;text-align:center;font-family:'Noto Sans TC',sans-serif;
+  transition:border-color .12s,color .12s,background .12s;line-height:1.3;
+}
+.reason-btn.sel{border-color:rgba(245,158,11,.5);color:var(--warn);background:var(--warn-dim);}
+
+textarea.dnote{
+  width:100%;padding:12px 14px;font-size:17px;font-family:'Noto Sans TC',sans-serif;
+  border:1px solid var(--border);border-radius:10px;background:var(--surface);color:var(--text);
+  outline:none;resize:none;height:90px;transition:border-color .2s;line-height:1.6;display:block;
+}
+textarea.dnote:focus{border-color:var(--warn);}
+textarea.dnote.req-err{border-color:var(--err);}
+.req-msg{font-size:11px;color:var(--err);margin-top:5px;display:none;}
+.req-msg.show{display:block;}
+
+/* ── Submit confirm modal ── */
+.modal-summary{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:14px 16px;margin-bottom:16px;}
+.sum-row{display:flex;justify-content:space-between;align-items:center;padding:10px 0;border-bottom:1px solid var(--border);font-size:18px;}
+.sum-row:last-child{border-bottom:none;}
+.sum-row .lbl{color:var(--muted);}
+.sum-row .val{font-family:'DM Mono',monospace;font-size:18px;font-weight:500;}
+.warn-notice{background:var(--err-dim);border:1px solid rgba(248,113,113,.2);border-radius:10px;padding:10px 13px;margin-bottom:14px;font-size:12px;color:var(--err);line-height:1.5;display:none;}
+.warn-notice.show{display:block;}
+
+/* ── Done ── */
+.done-icon{width:68px;height:68px;border-radius:50%;margin:0 auto 18px;display:flex;align-items:center;justify-content:center;font-size:30px;}
+.done-icon.ok{background:var(--accent-dim);border:2px solid rgba(74,222,128,.4);}
+.done-icon.partial{background:var(--warn-dim);border:2px solid rgba(245,158,11,.4);}
+
+@keyframes spin{to{transform:rotate(360deg);}}
+</style>
+</head>
+<body>
+
+<!-- ══════════════════════════════════════
+     VIEW 1 — LOGIN
+══════════════════════════════════════ -->
+<div class="view active" id="v-login">
+  <div class="inner">
+    <div class="brand">CHEKCIN · 工讀生系統</div>
+    <div class="headline">時數<span>查詢</span></div>
+    <div class="subline">輸入姓名與手機後四碼，查看您的上班紀錄與時數明細。</div>
+
+    <div class="window-banner">
+      <div class="window-dot"></div>
+      <div class="window-text">
+        <b>確認開放中</b> · 截止 6/28（六）23:59<br>
+        <span style="opacity:.7;">請在截止前完成逐筆確認並送出</span>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">身份驗證</div>
+      <label for="inp-name">姓名</label>
+      <input type="text" id="inp-name" placeholder="王小明" autocomplete="name">
+      <label for="inp-phone">手機後四碼</label>
+      <input type="tel" id="inp-phone" placeholder="0000" maxlength="4" inputmode="numeric">
+      <div class="hint">資料僅用於核對身份，不會另行儲存。</div>
+      <div class="err-inline" id="err-login">查無資料，請確認姓名與後四碼是否正確。</div>
+    </div>
+    <button class="btn-primary" id="btn-login" onclick="doLogin()">查詢我的時數</button>
+  </div>
+</div>
+
+
+<!-- ══════════════════════════════════════
+     VIEW 2 — HOURS LIST
+══════════════════════════════════════ -->
+<div class="view" id="v-hours">
+  <div class="inner">
+    <div class="brand">CHEKCIN · 工讀生系統</div>
+    <div class="headline"><span>打卡</span>確認紀錄</div>
+
+    <div class="id-bar">
+      <div>
+        <div class="id-name">王小明</div>
+        <div class="id-sub">****-****-3456 · RI26 展覽</div>
+      </div>
+    </div>
+
+    <div class="stat-grid" id="stat-grid">
+      <div class="stat-tile hidden" id="tile-special">
+        <div class="stat-num amber" id="val-special">8</div><div class="stat-label">特殊時數 (hrs)</div>
+      </div>
+      <div class="stat-tile hidden" id="tile-meal">
+        <div class="stat-num purple" id="val-meal">✔</div><div class="stat-label">餐費</div>
+      </div>
+      <div class="stat-tile hidden" id="tile-transport">
+        <div class="stat-num sky" id="val-transport">✔</div><div class="stat-label">交通補助</div>
+      </div>
+    </div>
+
+    <!-- ── Shift list — populated dynamically by renderShifts() ── -->
+    <div class="shift-list" id="shift-list">
+      <div style="padding:32px;text-align:center;color:var(--muted);font-size:14px;">載入中…</div>
+    </div><!-- shift-list -->
+  </div>
+</div>
+
+
+<!-- ── Sticky bar ── -->
+<div class="sticky-bar" id="sticky-bar" style="display:none;">
+  <div class="sticky-inner">
+    <div class="progress-track"><div class="progress-fill" id="progress-fill" style="width:0%"></div></div>
+    <div class="sticky-hint" id="sticky-hint">請逐筆確認每筆班次後再送出</div>
+    <button class="btn-primary" id="btn-submit" onclick="trySubmit()" disabled>送出確認</button>
+  </div>
+</div>
+
+
+<!-- ══════════════════════════════════════
+     MODAL — DISPUTE
+══════════════════════════════════════ -->
+<div class="modal hidden" id="modal-dispute">
+  <div class="modal-sheet">
+    <div class="modal-handle"></div>
+    <div class="modal-title">回報問題</div>
+    <div style="font-size:16px;color:var(--muted);line-height:1.5;">說明這筆紀錄哪裡有誤，管理員會儘快處理。</div>
+    <div class="modal-ref" id="dispute-ref">
+      <b id="dr-head">—</b>
+      <span id="dr-detail">—</span>
+    </div>
+
+    <div style="font-size:14px;font-family:'DM Mono',monospace;letter-spacing:.08em;color:var(--muted);text-transform:uppercase;margin-bottom:8px;">問題類型（可複選）</div>
+    <div class="reason-grid" id="reason-grid">
+      <button class="reason-btn" onclick="toggleReason(this)">打卡時間有誤</button>
+      <button class="reason-btn" onclick="toggleReason(this)">地點顯示錯誤</button>
+      <button class="reason-btn" onclick="toggleReason(this)">缺少紀錄</button>
+      <button class="reason-btn" onclick="toggleReason(this)">其他</button>
+    </div>
+
+    <div style="font-size:11px;font-family:'DM Mono',monospace;letter-spacing:.1em;color:var(--muted);text-transform:uppercase;margin-bottom:8px;">說明（必填）</div>
+    <textarea class="dnote" id="dispute-note" placeholder="請說明問題，例如：我實際下班是 03:30…" oninput="onNoteInput()"></textarea>
+    <div class="req-msg" id="req-msg">請填寫說明後才能送出。</div>
+
+    <div class="btn-row" style="margin-top:16px;">
+      <button class="btn-ghost" onclick="closeDispute()">取消</button>
+      <button class="btn-primary" style="background:var(--warn);box-shadow:0 0 16px rgba(245,158,11,.3);" onclick="submitDispute()">送出回報</button>
+    </div>
+  </div>
+</div>
+
+
+<!-- ══════════════════════════════════════
+     MODAL — SUBMIT CONFIRM
+══════════════════════════════════════ -->
+<div class="modal hidden" id="modal-submit">
+  <div class="modal-sheet">
+    <div class="modal-handle"></div>
+    <div style="text-align:center;font-size:28px;margin-bottom:10px;">📋</div>
+    <div class="modal-title" style="text-align:center;">確認送出？</div>
+    <div style="font-size:13px;color:var(--muted);text-align:center;line-height:1.6;margin:8px 0 16px;">送出後將無法再修改，請確認摘要無誤。</div>
+
+    <div class="modal-summary">
+      <div class="sum-row"><span class="lbl">確認班次</span><span class="val" id="ms-ok" style="color:var(--accent);">—</span></div>
+      <div class="sum-row" id="ms-bad-row" style="display:none;"><span class="lbl">回報問題</span><span class="val" id="ms-bad" style="color:var(--err);">—</span></div>
+      <div class="sum-row" id="ms-special-row" style="display:none;"><span class="lbl">特殊時數</span><span class="val" id="ms-special" style="color:var(--warn);">—</span></div>
+      <div class="sum-row" id="ms-meal-row" style="display:none;"><span class="lbl">餐費</span><span class="val" id="ms-meal" style="color:#a78bfa;">—</span></div>
+      <div class="sum-row" id="ms-transport-row" style="display:none;"><span class="lbl">交通補助</span><span class="val" id="ms-transport" style="color:#38bdf8;">—</span></div>
+    </div>
+
+    <div class="warn-notice" id="modal-warn">尚有班次未操作，送出後視為<b>無異議確認</b>。</div>
+
+    <div class="btn-row">
+      <button class="btn-ghost" onclick="closeSubmit()">回去再看看</button>
+      <button class="btn-primary" id="btn-confirm-submit" onclick="doSubmit()">確定送出</button>
+    </div>
+  </div>
+</div>
+
+
+<!-- ══════════════════════════════════════
+     VIEW 3 — DONE
+══════════════════════════════════════ -->
+<div class="view" id="v-done">
+  <div class="inner" style="text-align:center;padding-top:60px;">
+    <div class="done-icon ok" id="done-icon">✅</div>
+    <div class="headline" style="text-align:center;"><span id="done-title">全部確認完成</span></div>
+    <div class="subline" style="text-align:center;max-width:300px;margin:6px auto 24px;" id="done-sub">所有班次已確認完畢，感謝您！</div>
+
+    <div class="card" style="text-align:left;">
+      <div class="card-title">送出摘要</div>
+      <div class="sum-row"><span class="lbl" style="color:var(--muted);">確認班次</span><span class="val" id="done-ok" style="font-family:'DM Mono',monospace;">—</span></div>
+      <div class="sum-row" id="done-bad-row" style="display:none;"><span class="lbl" style="color:var(--muted);">回報問題</span><span class="val" id="done-bad" style="font-family:'DM Mono',monospace;color:var(--err);">—</span></div>
+      <div class="sum-row" style="border:none;"><span class="lbl" style="color:var(--muted);">送出時間</span><span style="font-family:'DM Mono',monospace;" id="done-time">—</span></div>
+    </div>
+
+    <button class="btn-ghost" onclick="goLogin()" style="margin-top:8px;">登出</button>
+  </div>
+</div>
+
+
+<script>
+let TOTAL = 0;
+const state = {};
+let apiShifts = [];
+let activeId = null;
+let currentName = '';
+const disputeData = {};
+const DATA = { special: 0, meal: 0, transport: 0 };
+
+const API_URL = 'https://script.google.com/macros/s/AKfycbzbyZqLRNJ3ikHRfrIjaSXHpmP4TtgieFVevkgeBwpn49uvNfkdY7hLYJuH2_8vJsxPmw/exec';
+
+function showView(id) {
+  document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+  document.getElementById('sticky-bar').style.display = (id === 'v-hours') ? 'block' : 'none';
+  window.scrollTo(0, 0);
+}
+function goLogin() { showView('v-login'); }
+
+/* ── Login ── */
+function doLogin() {
+  const name  = document.getElementById('inp-name').value.trim();
+  const phone = document.getElementById('inp-phone').value.trim();
+  const err   = document.getElementById('err-login');
+  const btn   = document.getElementById('btn-login');
+  if (!name || phone.length < 4) {
+    err.textContent = '請填寫完整姓名與手機後四碼。';
+    err.classList.add('show'); return;
+  }
+  err.classList.remove('show');
+  btn.disabled = true; btn.textContent = '查詢中…';
+
+  fetch(`${API_URL}?name=${encodeURIComponent(name)}&phone=${encodeURIComponent(phone)}`)
+    .then(r => r.json())
+    .then(data => {
+      btn.disabled = false; btn.textContent = '查詢時數';
+      if (!data.ok) {
+        err.textContent = data.error === 'not_found'
+          ? '找不到符合的資料，請確認姓名與手機後四碼。'
+          : '發生錯誤，請稍後再試。';
+        err.classList.add('show'); return;
+      }
+      currentName = data.name;
+      apiShifts   = data.shifts;
+      initShifts(data.shifts);
+      showView('v-hours');
+      refreshStats();
+    })
+    .catch(() => {
+      btn.disabled = false; btn.textContent = '查詢時數';
+      err.textContent = '網路錯誤，請稍後再試。';
+      err.classList.add('show');
+    });
+}
+
+/* ── Init shifts from API ── */
+function initShifts(shifts) {
+  TOTAL = shifts.length;
+  // reset state
+  for (const k of Object.keys(state)) delete state[k];
+  shifts.forEach((sh, i) => { state[i + 1] = sh.status || 'p'; });
+
+  // compute totals for tiles / modal
+  DATA.special   = shifts.reduce((s, sh) => s + (sh.special || 0), 0);
+  DATA.meal      = shifts.reduce((s, sh) => s + (sh.meal || 0), 0);
+  DATA.transport = shifts.reduce((s, sh) => s + (sh.transport || 0), 0);
+
+  // restore any saved dispute data from API
+  shifts.forEach((sh, i) => {
+    const id = i + 1;
+    if (sh.status === 'd' && (sh.reasons || sh.note)) {
+      disputeData[id] = {
+        reasons: sh.reasons ? sh.reasons.split(',').map(r => r.trim()).filter(Boolean) : [],
+        note: sh.note || ''
+      };
+    }
+  });
+
+  renderShifts(shifts);
+  renderStatTiles();
+  document.getElementById('id-name').textContent = currentName;
+}
+
+/* ── Render shift rows dynamically ── */
+function renderShifts(shifts) {
+  const list    = document.getElementById('shift-list');
+  const CHECK   = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg>`;
+  const FLAG    = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1zM4 22v-7"/></svg>`;
+  list.innerHTML = '';
+
+  shifts.forEach((sh, idx) => {
+    const id = idx + 1;
+    let chips = '';
+    if (sh.special > 0)   chips += `<span class="chip cs">特殊 ${sh.special}h</span>`;
+    if (sh.meal > 0)      chips += `<span class="chip cm">餐費 $${sh.meal}</span>`;
+    if (sh.transport > 0) chips += `<span class="chip cb">交通 $${sh.transport}</span>`;
+
+    const actualTime = (sh.actualStart && sh.actualEnd)
+      ? `${sh.actualStart}–${sh.actualEnd}`
+      : (sh.actualStart || '尚無紀錄');
+
+    const dArgs = `${id},'${sh.date} ${sh.dow}','${sh.venue}','${sh.schedStart}–${sh.schedEnd}'`;
+
+    if (idx > 0) list.insertAdjacentHTML('beforeend', '<hr class="shift-sep">');
+    list.insertAdjacentHTML('beforeend', `
+      <div class="shift-row" id="sr-${id}">
+        <div class="s-date">
+          <div class="s-datenum">${sh.date}</div>
+          <div class="s-dow">${sh.dow}</div>
+        </div>
+        <div class="s-body">
+          <div class="s-top">
+            <span class="s-venue">${sh.venue}</span>
+            <span class="s-sched">${sh.schedStart}–${sh.schedEnd}</span>
+          </div>
+          <div class="s-actual-wrap">
+            <div class="s-actual-lbl">實際打卡</div>
+            <div class="s-actual">${actualTime}</div>
+          </div>
+          ${chips ? `<div class="s-chips">${chips}</div>` : ''}
+        </div>
+        <div class="s-acts">
+          <button class="s-pill-ok" id="pc-${id}" onclick="toggleConfirm(${id})">${CHECK}確認</button>
+          <button class="s-pill-flag" id="pd-${id}" onclick="openDispute(${dArgs})">${FLAG}問題</button>
+        </div>
+      </div>`);
+
+    if (sh.status !== 'p') setState(id, sh.status);
+  });
+}
+
+/* ── Render stat tiles ── */
+function renderStatTiles() {
+  const grid = document.getElementById('stat-grid');
+  let visible = 0;
+  if (DATA.special > 0) {
+    document.getElementById('tile-special').classList.remove('hidden');
+    document.getElementById('val-special').textContent = Math.round(DATA.special);
+    visible++;
+  } else { document.getElementById('tile-special').classList.add('hidden'); }
+  if (DATA.meal > 0) {
+    document.getElementById('tile-meal').classList.remove('hidden'); visible++;
+  } else { document.getElementById('tile-meal').classList.add('hidden'); }
+  if (DATA.transport > 0) {
+    document.getElementById('tile-transport').classList.remove('hidden'); visible++;
+  } else { document.getElementById('tile-transport').classList.add('hidden'); }
+  grid.classList.toggle('cols-1', visible === 1);
+  grid.style.display = visible === 0 ? 'none' : '';
+}
+
+/* ── Confirm toggle ── */
+function toggleConfirm(id) {
+  const next = state[id] === 'c' ? 'p' : 'c';
+  setState(id, next);
+  if (next === 'c' && activeId === id) closeDispute();
+  refreshStats();
+}
+
+/* ── Dispute open ── */
+function openDispute(id, datestr, venue, times, hrs) {
+  activeId = id;
+  document.getElementById('dr-head').textContent  = datestr + ' · ' + venue;
+  document.getElementById('dr-detail').textContent = times + ' · ' + hrs;
+  document.getElementById('dispute-note').classList.remove('req-err');
+  document.getElementById('req-msg').classList.remove('show');
+  // restore saved state if exists, otherwise reset
+  const saved = disputeData[id] || { reasons: [], note: '' };
+  document.getElementById('dispute-note').value = saved.note;
+  document.querySelectorAll('.reason-btn').forEach(b => {
+    b.classList.toggle('sel', saved.reasons.includes(b.textContent.trim()));
+  });
+  document.getElementById('modal-dispute').classList.remove('hidden');
+}
+function closeDispute() {
+  document.getElementById('modal-dispute').classList.add('hidden');
+  activeId = null;
+}
+function saveDisputeState() {
+  if (!activeId) return;
+  const reasons = [...document.querySelectorAll('.reason-btn.sel')].map(b => b.textContent.trim());
+  const note    = document.getElementById('dispute-note').value;
+  disputeData[activeId] = { reasons, note };
+}
+function toggleReason(btn) {
+  btn.classList.toggle('sel');
+  saveDisputeState();
+  // if all reasons deselected, clear note
+  const anySelected = document.querySelectorAll('.reason-btn.sel').length > 0;
+  if (!anySelected) {
+    document.getElementById('dispute-note').value = '';
+    if (activeId) disputeData[activeId] = { reasons: [], note: '' };
+  }
+}
+function onNoteInput() {
+  const ta = document.getElementById('dispute-note');
+  if (ta.value.trim()) {
+    ta.classList.remove('req-err');
+    document.getElementById('req-msg').classList.remove('show');
+  }
+  saveDisputeState();
+}
+function submitDispute() {
+  const note = document.getElementById('dispute-note').value.trim();
+  if (!note) {
+    document.getElementById('dispute-note').classList.add('req-err');
+    document.getElementById('req-msg').classList.add('show');
+    return;
+  }
+  saveDisputeState();
+  setState(activeId, 'd');
+  closeDispute();
+  refreshStats();
+}
+
+/* ── Set state ── */
+function setState(id, s) {
+  state[id] = s;
+  const row = document.getElementById('sr-' + id);
+  const pc  = document.getElementById('pc-' + id);
+  const pd  = document.getElementById('pd-' + id);
+  row.classList.remove('s-confirmed','s-disputed');
+  pc.classList.remove('ac');
+  pd.classList.remove('ad');
+  if (s === 'c') { row.classList.add('s-confirmed'); pc.classList.add('ac'); }
+  if (s === 'd') { row.classList.add('s-disputed');  pd.classList.add('ad'); }
+}
+
+/* ── Stats ── */
+function refreshStats() {
+  let ok = 0, bad = 0;
+  for (let i = 1; i <= TOTAL; i++) {
+    if (state[i] === 'c') ok++;
+    if (state[i] === 'd') bad++;
+  }
+  const done = ok + bad, pen = TOTAL - done;
+  document.getElementById('progress-fill').style.width = (done/TOTAL*100) + '%';
+  const hint = document.getElementById('sticky-hint');
+  const sub  = document.getElementById('btn-submit');
+  if (pen === 0) {
+    hint.textContent = '所有班次已完成，可以送出了 ✓';
+    sub.disabled = false;
+  } else {
+    hint.innerHTML = '還有 <b>' + pen + '</b> 筆班次尚未確認或回報';
+    sub.disabled = true;
+  }
+}
+
+/* ── Submit ── */
+function trySubmit() {
+  let ok = 0, bad = 0, pen = 0;
+  for (let i = 1; i <= TOTAL; i++) {
+    if (state[i] === 'c') ok++;
+    else if (state[i] === 'd') bad++;
+    else pen++;
+  }
+  document.getElementById('ms-ok').textContent  = ok  + ' 筆';
+  if (bad > 0) {
+    document.getElementById('ms-bad-row').style.display = '';
+    document.getElementById('ms-bad').textContent = bad + ' 筆';
+  } else {
+    document.getElementById('ms-bad-row').style.display = 'none';
+  }
+  if (DATA.special > 0) {
+    document.getElementById('ms-special-row').style.display = '';
+    document.getElementById('ms-special').textContent = DATA.special + ' hrs';
+  } else {
+    document.getElementById('ms-special-row').style.display = 'none';
+  }
+  if (DATA.meal > 0) {
+    document.getElementById('ms-meal-row').style.display = '';
+    document.getElementById('ms-meal').textContent = '$' + DATA.meal;
+  } else {
+    document.getElementById('ms-meal-row').style.display = 'none';
+  }
+  if (DATA.transport > 0) {
+    document.getElementById('ms-transport-row').style.display = '';
+    document.getElementById('ms-transport').textContent = '$' + DATA.transport;
+  } else {
+    document.getElementById('ms-transport-row').style.display = 'none';
+  }
+  document.getElementById('modal-warn').classList.toggle('show', pen > 0);
+  document.getElementById('modal-submit').classList.remove('hidden');
+}
+function closeSubmit() { document.getElementById('modal-submit').classList.add('hidden'); }
+function doSubmit() {
+  // build POST payload from apiShifts + current state
+  const payload = {
+    shifts: apiShifts.map((sh, i) => {
+      const id = i + 1;
+      const dd = disputeData[id] || {};
+      return {
+        row:     sh.row,
+        status:  state[id] || 'p',
+        reasons: (dd.reasons || []).join(','),
+        note:    dd.note || ''
+      };
+    })
+  };
+
+  const btn = document.getElementById('btn-confirm-submit');
+  if (btn) { btn.disabled = true; btn.textContent = '送出中…'; }
+
+  fetch(API_URL, {
+    method: 'POST',
+    headers: { 'Content-Type': 'text/plain' },
+    body: JSON.stringify(payload)
+  })
+  .then(r => r.json())
+  .then(res => {
+    if (btn) { btn.disabled = false; btn.textContent = '確認送出'; }
+    closeSubmit();
+    if (!res.ok) { alert('送出失敗，請稍後再試。'); return; }
+    _showDone();
+  })
+  .catch(() => {
+    if (btn) { btn.disabled = false; btn.textContent = '確認送出'; }
+    closeSubmit();
+    alert('網路錯誤，請稍後再試。');
+  });
+}
+
+function _showDone() {
+  let ok = 0, bad = 0;
+  for (let i = 1; i <= TOTAL; i++) {
+    if (state[i] === 'c') ok++;
+    if (state[i] === 'd') bad++;
+  }
+  document.getElementById('done-ok').textContent = ok + ' 筆';
+  if (bad > 0) {
+    document.getElementById('done-bad-row').style.display = '';
+    document.getElementById('done-bad').textContent = bad + ' 筆';
+  } else {
+    document.getElementById('done-bad-row').style.display = 'none';
+  }
+  const now = new Date();
+  document.getElementById('done-time').textContent =
+    now.getFullYear() + '-' + String(now.getMonth()+1).padStart(2,'0') + '-' +
+    String(now.getDate()).padStart(2,'0') + ' ' +
+    String(now.getHours()).padStart(2,'0') + ':' + String(now.getMinutes()).padStart(2,'0');
+  if (bad > 0) {
+    document.getElementById('done-icon').className = 'done-icon partial';
+    document.getElementById('done-icon').textContent = '⚑';
+    document.getElementById('done-title').textContent = currentName + ' 送出完成（含回報）';
+    document.getElementById('done-sub').textContent = bad + ' 筆問題回報將由管理員處理。';
+  } else {
+    document.getElementById('done-title').textContent = currentName + ' 送出完成';
+  }
+  showView('v-done');
+}
+
+document.getElementById('modal-dispute').addEventListener('click', e => { if(e.target===e.currentTarget) closeDispute(); });
+document.getElementById('modal-submit').addEventListener('click',  e => { if(e.target===e.currentTarget) closeSubmit();  });
+</script>
+</body>
+</html>
