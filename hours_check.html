@@ -518,8 +518,8 @@ function initShifts(shifts) {
 
   // compute totals for tiles / modal
   DATA.special   = shifts.reduce((s, sh) => s + (sh.special || 0), 0);
-  DATA.meal      = shifts.reduce((s, sh) => s + (sh.meal || 0), 0);
-  DATA.transport = shifts.reduce((s, sh) => s + (sh.transport || 0), 0);
+  DATA.meal      = shifts.filter(sh => sh.meal > 0).length;
+  DATA.transport = shifts.filter(sh => sh.transport > 0).length;
 
   // restore any saved dispute data from API
   shifts.forEach((sh, i) => {
@@ -555,7 +555,8 @@ function renderShifts(shifts) {
       ? `${sh.actualStart}–${sh.actualEnd}`
       : (sh.actualStart || '尚無紀錄');
 
-    const dArgs = `${id},'${sh.date} ${sh.dow}','${sh.venue}','${sh.schedStart}–${sh.schedEnd}'`;
+    const actualDisp = (sh.actualStart && sh.actualEnd) ? `實際 ${sh.actualStart}–${sh.actualEnd}` : '尚無打卡紀錄';
+    const dArgs = `${id},'${sh.date} ${sh.dow}','${sh.venue}','${sh.schedStart}–${sh.schedEnd}','${actualDisp}'`;
 
     if (idx > 0) list.insertAdjacentHTML('beforeend', '<hr class="shift-sep">');
     list.insertAdjacentHTML('beforeend', `
@@ -724,13 +725,13 @@ function trySubmit() {
   }
   if (DATA.meal > 0) {
     document.getElementById('ms-meal-row').style.display = '';
-    document.getElementById('ms-meal').textContent = '$' + DATA.meal;
+    document.getElementById('ms-meal').textContent = DATA.meal + ' 天';
   } else {
     document.getElementById('ms-meal-row').style.display = 'none';
   }
   if (DATA.transport > 0) {
     document.getElementById('ms-transport-row').style.display = '';
-    document.getElementById('ms-transport').textContent = '$' + DATA.transport;
+    document.getElementById('ms-transport').textContent = DATA.transport + ' 天';
   } else {
     document.getElementById('ms-transport-row').style.display = 'none';
   }
