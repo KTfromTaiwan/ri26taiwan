@@ -818,16 +818,12 @@ function _showDone() {
     now.getFullYear() + '-' + String(now.getMonth()+1).padStart(2,'0') + '-' +
     String(now.getDate()).padStart(2,'0') + ' ' +
     String(now.getHours()).padStart(2,'0') + ':' + String(now.getMinutes()).padStart(2,'0');
+  document.getElementById('done-title').textContent = currentName + ' 送出完成';
   if (bad > 0) {
-    document.getElementById('done-icon').className = 'done-icon partial';
-    document.getElementById('done-icon').textContent = '⚑';
-    document.getElementById('done-title').textContent = currentName + ' 送出完成（含回報）';
     document.getElementById('done-sub').textContent = bad + ' 筆問題回報將由管理員處理。';
-  } else {
-    document.getElementById('done-title').textContent = currentName + ' 送出完成';
   }
   showView('v-done');
-  if (bad === 0) launchConfetti();
+  launchConfetti();
 }
 
 function launchConfetti() {
