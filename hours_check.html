@@ -414,7 +414,7 @@ let currentPhone = '';
 const disputeData = {};
 const DATA = { special: 0, meal: 0, transport: 0 };
 
-const API_URL = 'https://script.google.com/macros/s/AKfycbxlaU2tOf7lI1VgMA5QSSx4ZoqBrOzYGSibmTsNywJb2rxrgomKb6KLO4J4cifQYj5oJQ/exec';
+const API_URL = 'https://script.google.com/macros/s/AKfycbx7kqUN1o-jVZ79e0tJPa1PhISA-3xyaUwRRbyqEwgDku7I-Ny3jOpe6EGIIZLHwFbkNQ/exec';
 
 /* ── 特殊時數計算（23:00–07:59，取整數小時） ── */
 function calcSpecial(start, end) {
@@ -432,7 +432,7 @@ function calcSpecial(start, end) {
   const mins = e > s
     ? specialInRange(s, e)                        // 當日班
     : specialInRange(s, 1440) + specialInRange(0, e); // 跨日班
-  return Math.round(mins / 60);
+  return Math.floor(mins / 60);
 }
 
 function showView(id) {
@@ -765,7 +765,12 @@ function doSubmit() {
   .then(res => {
     if (btn) { btn.disabled = false; btn.textContent = '確認送出'; }
     closeSubmit();
-    if (!res.ok) { alert('送出失敗，請稍後再試。'); return; }
+    if (!res.ok) {
+      const msg = res.error === 'server_busy'
+        ? '伺服器忙碌，請稍後再試。'
+        : '送出失敗，請稍後再試。';
+      alert(msg); return;
+    }
     _showDone();
   })
   .catch(() => {
