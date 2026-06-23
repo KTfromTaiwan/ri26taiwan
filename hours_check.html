@@ -126,13 +126,13 @@ input[type="tel"]{text-align:center;letter-spacing:10px;font-size:26px;font-fami
 /* ══════════════════════════════════
    SHIFT LIST CARD
 ══════════════════════════════════ */
-.shift-list{background:var(--card);border:1px solid var(--border);border-radius:var(--r);overflow:hidden;margin-bottom:14px;}
+.shift-list{margin-bottom:14px;}
 
-.shift-row{display:flex;align-items:center;gap:12px;padding:12px 14px;transition:background .15s;}
-.shift-row.s-confirmed{background:#0c2e1c;border-left:3px solid rgba(74,222,128,.5);}
-.shift-row.s-disputed {background:#2c1510;border-left:3px solid rgba(248,113,113,.5);}
+.shift-row{display:flex;align-items:center;gap:12px;padding:12px 14px;transition:background .15s;background:var(--card);border:1px solid #2a3347;border-radius:10px;margin-bottom:2px;overflow:hidden;}
+.shift-row.s-confirmed{background:#0c2e1c;border-color:#1a4a2e;border-left:3px solid rgba(74,222,128,.6);}
+.shift-row.s-disputed {background:#2c1510;border-color:#4a2020;border-left:3px solid rgba(248,113,113,.7);}
 
-.shift-sep{border:none;border-top:1px solid var(--border);margin:0;}
+.shift-sep{display:none;}
 
 /* date col */
 .s-date{flex-shrink:0;width:46px;}
