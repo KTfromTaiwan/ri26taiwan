@@ -426,12 +426,13 @@ let TOTAL = 0;
 const state = {};
 let apiShifts = [];
 let activeId = null;
-let currentName = '';
+let currentName  = '';
 let currentPhone = '';
+let currentEmpId = '';
 const disputeData = {};
 const DATA = { special: 0, meal: 0, transport: 0 };
 
-const API_URL = 'https://script.google.com/macros/s/AKfycbzFxRy08ghaqZ25OhK1Mjo6vyyAZb-dqdJBFM6gF9CP-2IQtgroQMw4WegjA5y58uMhmw/exec';
+const API_URL = 'https://script.google.com/macros/s/AKfycbzAMhH0XsFrkD4Mdevfia1lkud44oxwhIVpMRnvuZAZtN2g0_yKwJeSW47ZqTqR4LsjRw/exec';
 
 /* ── 特殊時數計算（23:00–07:59，取整數小時） ── */
 function calcSpecial(start, end) {
@@ -474,6 +475,7 @@ function doRefresh() {
       btn.disabled = false;
       overlay.classList.add('hidden');
       if (!data.ok) return;
+      currentEmpId = data.empId || currentEmpId;
       apiShifts = data.shifts;
       for (const k of Object.keys(disputeData)) delete disputeData[k];
       initShifts(data.shifts);
@@ -510,6 +512,7 @@ function doLogin() {
       }
       currentName  = data.name;
       currentPhone = phone;
+      currentEmpId = data.empId || '';
       apiShifts    = data.shifts;
       initShifts(data.shifts);
       showView('v-hours');
@@ -758,17 +761,26 @@ function trySubmit() {
 }
 function closeSubmit() { document.getElementById('modal-submit').classList.add('hidden'); }
 function doSubmit() {
-  // build POST payload from apiShifts + current state
+  // build POST payload — include full shift details for email (no Sheet re-query needed)
   const payload = {
+    name:  currentName,
+    empId: currentEmpId,
     shifts: apiShifts.map((sh, i) => {
-      const id = i + 1;
+      const id     = i + 1;
       const status = state[id] || 'p';
-      const dd = status === 'c' ? {} : (disputeData[id] || {});
+      const dd     = status === 'c' ? {} : (disputeData[id] || {});
       return {
-        row:     sh.row,
+        row:         sh.row,
         status,
-        reasons: (dd.reasons || []).join(','),
-        note:    dd.note || ''
+        date:        sh.date,
+        dow:         sh.dow,
+        venue:       sh.venue,
+        schedStart:  sh.schedStart,
+        schedEnd:    sh.schedEnd,
+        actualStart: sh.actualStart,
+        actualEnd:   sh.actualEnd,
+        reasons:     (dd.reasons || []).join(','),
+        note:        dd.note || ''
       };
     })
   };
