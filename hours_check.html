@@ -257,6 +257,20 @@ textarea.dnote.req-err{border-color:var(--err);}
 <body>
 
 <!-- ══════════════════════════════════════
+     VIEW 0 — EXPIRED
+══════════════════════════════════════ -->
+<div class="view" id="v-expired">
+  <div class="inner" style="display:flex;align-items:center;justify-content:center;min-height:80vh;">
+    <div style="text-align:center;padding:0 16px;">
+      <div style="width:64px;height:64px;border-radius:50%;background:rgba(248,113,113,.1);border:1px solid rgba(248,113,113,.2);display:flex;align-items:center;justify-content:center;font-size:28px;margin:0 auto 24px;">🔒</div>
+      <div class="headline" style="font-size:26px;">系統已關閉</div>
+      <div style="width:40px;height:2px;background:rgba(248,113,113,.4);margin:16px auto;border-radius:2px;"></div>
+      <div style="font-size:14px;color:var(--muted);line-height:1.9;">本期時數回報已截止<br>如有問題請聯絡主管</div>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════
      VIEW 1 — LOGIN
 ══════════════════════════════════════ -->
 <div class="view active" id="v-login">
@@ -441,7 +455,7 @@ let currentEmpId = '';
 const disputeData = {};
 const DATA = { special: 0, meal: 0, transport: 0 };
 
-const API_URL = 'https://script.google.com/macros/s/AKfycbzaMQS6IQ4dFqZHVkuaeSr1Ap-BVsueSeJGadRN4hYk20ZlKHhFoh-r3-Rzwy6IbwS6og/exec';
+const API_URL = 'https://script.google.com/macros/s/AKfycbzbqTDAcKCbFpDs1L9wEMWi9hPDPe8QZkcqrS-C2DRrphYC-F70flhtGhnRUH8jgSfE9Q/exec';
 
 /* ── 特殊時數計算（23:00–06:59，取整數小時） ── */
 function calcSpecial(start, end) {
@@ -518,6 +532,12 @@ function doLogin() {
           ? '找不到符合的資料，請確認姓名與手機後四碼。'
           : '發生錯誤，請稍後再試。';
         err.classList.add('show'); return;
+      }
+      // ── 到期日檢查 ──
+      if (data.expiresAt) {
+        const today   = new Date(); today.setHours(0,0,0,0);
+        const expires = new Date(data.expiresAt); expires.setHours(0,0,0,0);
+        if (today > expires) { showView('v-expired'); return; }
       }
       currentName  = data.name;
       currentPhone = phone;
