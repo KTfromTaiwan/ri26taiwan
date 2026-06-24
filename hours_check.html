@@ -282,7 +282,7 @@ textarea.dnote.req-err{border-color:var(--err);}
     <div class="window-banner">
       <div class="window-dot"></div>
       <div class="window-text">
-        <b>確認開放中</b> · 截止 <span id="deadline-display">2026-06-29 23:59</span><br>
+        <b>確認開放中</b> · 截止 <span id="deadline-display">2026-06-27 23:59</span><br>
         <span style="opacity:.7;">請在截止前完成逐筆確認並送出</span>
       </div>
     </div>
@@ -458,7 +458,7 @@ const DATA = { special: 0, meal: 0, transport: 0 };
 const API_URL = 'https://script.google.com/macros/s/AKfycbxRXPFzo5vv3YS0GYhEZBNlYbvwNhC5HAiA5zTXzNJDb58N800LNkxI4QxBem6J-2C2kg/exec';
 
 /* ── 截止日期檢查（頁面載入時執行） ── */
-const EXPIRES = new Date('2026-06-29T23:59:59+08:00');
+const EXPIRES = new Date('2026-06-27T23:59:59+08:00');
 document.addEventListener('DOMContentLoaded', function() {
   if (new Date() > EXPIRES) { showView('v-expired'); return; }
 });
