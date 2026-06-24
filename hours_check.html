@@ -265,7 +265,7 @@ textarea.dnote.req-err{border-color:var(--err);}
       <div style="width:64px;height:64px;border-radius:50%;background:rgba(248,113,113,.1);border:1px solid rgba(248,113,113,.2);display:flex;align-items:center;justify-content:center;font-size:28px;margin:0 auto 24px;">🔒</div>
       <div class="headline" style="font-size:26px;">系統已關閉</div>
       <div style="width:40px;height:2px;background:rgba(248,113,113,.4);margin:16px auto;border-radius:2px;"></div>
-      <div style="font-size:14px;color:var(--muted);line-height:1.9;">本期時數回報已截止<br>如有問題請聯絡主管</div>
+      <div style="font-size:14px;color:var(--muted);line-height:1.9;">本期時數回報已截止 😢<br>如有問題請聯絡主管</div>
     </div>
   </div>
 </div>
@@ -282,7 +282,7 @@ textarea.dnote.req-err{border-color:var(--err);}
     <div class="window-banner">
       <div class="window-dot"></div>
       <div class="window-text">
-        <b>確認開放中</b> · 截止 <span id="deadline-display">2026-07-01 23:59</span><br>
+        <b>確認開放中</b> · 截止 <span id="deadline-display">2026-06-23 23:59</span><br>
         <span style="opacity:.7;">請在截止前完成逐筆確認並送出</span>
       </div>
     </div>
@@ -456,6 +456,12 @@ const disputeData = {};
 const DATA = { special: 0, meal: 0, transport: 0 };
 
 const API_URL = 'https://script.google.com/macros/s/AKfycbxRXPFzo5vv3YS0GYhEZBNlYbvwNhC5HAiA5zTXzNJDb58N800LNkxI4QxBem6J-2C2kg/exec';
+
+/* ── 截止日期檢查（頁面載入時執行） ── */
+const EXPIRES = new Date('2026-06-23T23:59:00+08:00');
+document.addEventListener('DOMContentLoaded', function() {
+  if (new Date() > EXPIRES) { showView('v-expired'); return; }
+});
 
 /* ── 特殊時數計算（23:00–06:59，取整數小時） ── */
 function calcSpecial(start, end) {
