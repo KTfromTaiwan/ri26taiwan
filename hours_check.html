@@ -121,6 +121,7 @@ input[type="tel"]{text-align:center;letter-spacing:10px;font-size:26px;font-fami
 .stat-num.amber{color:var(--warn);}
 .stat-num.purple{color:#a78bfa;}
 .stat-num.sky{color:#38bdf8;}
+.stat-num.pink{color:#f472b6;}
 .stat-label{font-size:11px;color:var(--muted);margin-top:5px;letter-spacing:.02em;}
 
 /* ── Progress (in sticky bar) ── */
@@ -158,6 +159,7 @@ input[type="tel"]{text-align:center;letter-spacing:10px;font-size:26px;font-fami
 .ct{background:rgba(96,165,250,.10);color:var(--blue);border:1px solid rgba(96,165,250,.2);}
 .cm{background:rgba(167,139,250,.10);color:#a78bfa;border:1px solid rgba(167,139,250,.2);}
 .cb{background:rgba(56,189,248,.10);color:#38bdf8;border:1px solid rgba(56,189,248,.2);}
+.ct{background:rgba(244,114,182,.10);color:#f472b6;border:1px solid rgba(244,114,182,.2);}
 
 /* action pills — B scheme: pre-tinted default */
 .s-acts{display:flex;flex-direction:column;gap:10px;flex-shrink:0;}
@@ -310,6 +312,9 @@ textarea.dnote.req-err{border-color:var(--err);}
       </div>
       <div class="stat-tile hidden" id="tile-transport">
         <div class="stat-num sky" id="val-transport">✔</div><div class="stat-label">交通補助</div>
+      </div>
+      <div class="stat-tile hidden" id="tile-carfare">
+        <div class="stat-num pink" id="val-carfare">✔</div><div class="stat-label">車馬費</div>
       </div>
     </div>
 
@@ -530,15 +535,18 @@ function initShifts(shifts) {
   TOTAL = shifts.length;
   // reset state
   for (const k of Object.keys(state)) delete state[k];
-  shifts.forEach((sh, i) => { state[i + 1] = sh.status || 'p'; });
+  shifts.forEach((sh, i) => {
+    state[i + 1] = sh.isTraining ? 't' : (sh.status || 'p');
+  });
 
   // 特殊時數由前端計算（覆蓋 sheet 值）
-  shifts.forEach(sh => { sh.special = calcSpecial(sh.actualStart, sh.actualEnd); });
+  shifts.forEach(sh => { sh.special = sh.isTraining ? 0 : calcSpecial(sh.actualStart, sh.actualEnd); });
 
   // compute totals for tiles / modal
   DATA.special   = shifts.reduce((s, sh) => s + (sh.special || 0), 0);
-  DATA.meal      = shifts.filter(sh => sh.meal > 0).length;
-  DATA.transport = shifts.filter(sh => sh.transport > 0).length;
+  DATA.meal      = shifts.filter(sh => !sh.isTraining && sh.meal > 0).length;
+  DATA.transport = shifts.filter(sh => !sh.isTraining && sh.transport > 0).length;
+  DATA.carfare   = shifts.filter(sh => sh.isTraining).length;
 
   // restore any saved dispute data from API
   shifts.forEach((sh, i) => {
@@ -568,9 +576,13 @@ function renderShifts(shifts) {
   shifts.forEach((sh, idx) => {
     const id = idx + 1;
     let chips = '';
-    if (sh.special > 0)   chips += `<span class="chip cs">特殊 ${sh.special}h</span>`;
-    if (sh.meal > 0)      chips += `<span class="chip cm">餐費 $${sh.meal}</span>`;
-    if (sh.transport > 0) chips += `<span class="chip cb">交通 $${sh.transport}</span>`;
+    if (sh.isTraining) {
+      chips = `<span class="chip ct">車馬費 $500</span>`;
+    } else {
+      if (sh.special > 0)   chips += `<span class="chip cs">特殊 ${sh.special}h</span>`;
+      if (sh.meal > 0)      chips += `<span class="chip cm">餐費 $${sh.meal}</span>`;
+      if (sh.transport > 0) chips += `<span class="chip cb">交通 $${sh.transport}</span>`;
+    }
 
     const actualTime = (sh.actualStart && sh.actualEnd)
       ? `${sh.actualStart}–${sh.actualEnd}`
@@ -578,6 +590,12 @@ function renderShifts(shifts) {
 
     const actualDisp = (sh.actualStart && sh.actualEnd) ? `實際 ${sh.actualStart}–${sh.actualEnd}` : '尚無打卡紀錄';
     const dArgs = `${id},'${sh.date} ${sh.dow}','${sh.venue}','${sh.schedStart}–${sh.schedEnd}','${actualDisp}'`;
+
+    const actsHtml = sh.isTraining ? '' : `
+        <div class="s-acts">
+          <button class="s-pill-ok" id="pc-${id}" onclick="toggleConfirm(${id})">${CHECK}確認</button>
+          <button class="s-pill-flag" id="pd-${id}" onclick="openDispute(${dArgs})">${FLAG}問題</button>
+        </div>`;
 
     if (idx > 0) list.insertAdjacentHTML('beforeend', '<hr class="shift-sep">');
     list.insertAdjacentHTML('beforeend', `
@@ -597,13 +615,10 @@ function renderShifts(shifts) {
           </div>
           ${chips ? `<div class="s-chips">${chips}</div>` : ''}
         </div>
-        <div class="s-acts">
-          <button class="s-pill-ok" id="pc-${id}" onclick="toggleConfirm(${id})">${CHECK}確認</button>
-          <button class="s-pill-flag" id="pd-${id}" onclick="openDispute(${dArgs})">${FLAG}問題</button>
-        </div>
+        ${actsHtml}
       </div>`);
 
-    if (sh.status !== 'p') setState(id, sh.status);
+    if (sh.status !== 'p' && !sh.isTraining) setState(id, sh.status);
   });
 }
 
@@ -622,6 +637,11 @@ function renderStatTiles() {
   if (DATA.transport > 0) {
     document.getElementById('tile-transport').classList.remove('hidden'); visible++;
   } else { document.getElementById('tile-transport').classList.add('hidden'); }
+  if (DATA.carfare > 0) {
+    document.getElementById('tile-carfare').classList.remove('hidden');
+    document.getElementById('val-carfare').textContent = DATA.carfare + ' 場';
+    visible++;
+  } else { document.getElementById('tile-carfare').classList.add('hidden'); }
   grid.classList.toggle('cols-1', visible === 1);
   grid.style.display = visible === 0 ? 'none' : '';
 }
@@ -696,22 +716,25 @@ function setState(id, s) {
   const row = document.getElementById('sr-' + id);
   const pc  = document.getElementById('pc-' + id);
   const pd  = document.getElementById('pd-' + id);
+  if (!row) return;
   row.classList.remove('s-confirmed','s-disputed');
-  pc.classList.remove('ac');
-  pd.classList.remove('ad');
-  if (s === 'c') { row.classList.add('s-confirmed'); pc.classList.add('ac'); }
-  if (s === 'd') { row.classList.add('s-disputed');  pd.classList.add('ad'); }
+  if (pc) pc.classList.remove('ac');
+  if (pd) pd.classList.remove('ad');
+  if (s === 'c') { row.classList.add('s-confirmed'); if (pc) pc.classList.add('ac'); }
+  if (s === 'd') { row.classList.add('s-disputed');  if (pd) pd.classList.add('ad'); }
 }
 
 /* ── Stats ── */
 function refreshStats() {
-  let ok = 0, bad = 0;
+  let ok = 0, bad = 0, training = 0;
   for (let i = 1; i <= TOTAL; i++) {
+    if (state[i] === 't') { training++; continue; }
     if (state[i] === 'c') ok++;
     if (state[i] === 'd') bad++;
   }
-  const done = ok + bad, pen = TOTAL - done;
-  document.getElementById('progress-fill').style.width = (done/TOTAL*100) + '%';
+  const actionable = TOTAL - training;
+  const done = ok + bad, pen = actionable - done;
+  document.getElementById('progress-fill').style.width = (actionable > 0 ? done/actionable*100 : 100) + '%';
   const hint = document.getElementById('sticky-hint');
   const sub  = document.getElementById('btn-submit');
   if (pen === 0) {
@@ -727,6 +750,7 @@ function refreshStats() {
 function trySubmit() {
   let ok = 0, bad = 0, pen = 0;
   for (let i = 1; i <= TOTAL; i++) {
+    if (state[i] === 't') continue;            // 教育訓練不計入進度
     if (state[i] === 'c') ok++;
     else if (state[i] === 'd') bad++;
     else pen++;
@@ -767,6 +791,7 @@ function doSubmit() {
     empId: currentEmpId,
     shifts: apiShifts.map((sh, i) => {
       const id     = i + 1;
+      if (sh.isTraining) return null;           // 教育訓練不回寫
       const status = state[id] || 'p';
       const dd     = status === 'c' ? {} : (disputeData[id] || {});
       return {
@@ -782,7 +807,7 @@ function doSubmit() {
         reasons:     (dd.reasons || []).join(','),
         note:        dd.note || ''
       };
-    })
+    }).filter(Boolean)
   };
 
   const btn = document.getElementById('btn-confirm-submit');
