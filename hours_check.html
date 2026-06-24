@@ -393,7 +393,7 @@ textarea.dnote.req-err{border-color:var(--err);}
       <div class="sum-row" id="ms-special-row" style="display:none;"><span class="lbl">特殊時數</span><span class="val" id="ms-special" style="color:var(--warn);">—</span></div>
       <div class="sum-row" id="ms-meal-row" style="display:none;"><span class="lbl">餐費</span><span class="val" id="ms-meal" style="color:#a78bfa;">—</span></div>
       <div class="sum-row" id="ms-transport-row" style="display:none;"><span class="lbl">交通補助</span><span class="val" id="ms-transport" style="color:#38bdf8;">—</span></div>
-      <div class="sum-row" id="ms-carfare-row" style="display:none;"><span class="lbl">車馬費</span><span class="val" id="ms-carfare" style="color:#f472b6;">—</span></div>
+      <div class="sum-row" id="ms-carfare-row" style="display:none;"><span class="lbl">教育訓練</span><span class="val" id="ms-carfare" style="color:#f472b6;">—</span></div>
     </div>
 
     <div class="warn-notice" id="modal-warn">尚有班次未操作，送出後視為<b>無異議確認</b>。</div>
@@ -789,7 +789,7 @@ function trySubmit() {
   }
   if (DATA.carfare > 0) {
     document.getElementById('ms-carfare-row').style.display = '';
-    document.getElementById('ms-carfare').textContent = DATA.carfare + ' 場 × $500';
+    document.getElementById('ms-carfare').textContent = DATA.carfare + ' 天';
   } else {
     document.getElementById('ms-carfare-row').style.display = 'none';
   }
