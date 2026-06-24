@@ -282,7 +282,7 @@ textarea.dnote.req-err{border-color:var(--err);}
     <div class="window-banner">
       <div class="window-dot"></div>
       <div class="window-text">
-        <b>確認開放中</b> · 截止 <span id="deadline-display">—</span><br>
+        <b>確認開放中</b> · 截止 <span id="deadline-display">2026-07-01 23:59</span><br>
         <span style="opacity:.7;">請在截止前完成逐筆確認並送出</span>
       </div>
     </div>
@@ -455,7 +455,7 @@ let currentEmpId = '';
 const disputeData = {};
 const DATA = { special: 0, meal: 0, transport: 0 };
 
-const API_URL = 'https://script.google.com/macros/s/AKfycbwVcfaEGUUFTApxQvo7DBHiNDWSjlOeOzsehvrys4yUnd1n4jdp2r8W_IgyWh-_EeKWUQ/exec';
+const API_URL = 'https://script.google.com/macros/s/AKfycbxRXPFzo5vv3YS0GYhEZBNlYbvwNhC5HAiA5zTXzNJDb58N800LNkxI4QxBem6J-2C2kg/exec';
 
 /* ── 特殊時數計算（23:00–06:59，取整數小時） ── */
 function calcSpecial(start, end) {
@@ -475,25 +475,6 @@ function calcSpecial(start, end) {
     : specialInRange(s, 1440) + specialInRange(0, e); // 跨日班
   return Math.floor(mins / 60);
 }
-
-/* ── 頁面載入：取得截止日期顯示 ── */
-function updateDeadlineBanner(expiresAt) {
-  if (!expiresAt) return;
-  const expires = new Date(expiresAt.replace(' ', 'T'));
-  if (isNaN(expires)) return;
-  const DOW_ZH = ['日','一','二','三','四','五','六'];
-  const mo = expires.getMonth() + 1, dd = expires.getDate();
-  const dow = DOW_ZH[expires.getDay()];
-  const hh = String(expires.getHours()).padStart(2,'0');
-  const mm = String(expires.getMinutes()).padStart(2,'0');
-  const el = document.getElementById('deadline-display');
-  if (el) el.textContent = mo + '/' + dd + '（' + dow + '）' + hh + ':' + mm;
-}
-
-fetch(API_URL + '?config=1')
-  .then(r => r.json())
-  .then(d => { if (d.expiresAt) updateDeadlineBanner(d.expiresAt); })
-  .catch(() => {});
 
 function showView(id) {
   document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
